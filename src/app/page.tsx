@@ -1,103 +1,201 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import { GitHubTokenDialog } from '@/components/APIKeyDialog'
+import { FileExplorer } from '@/components/FileExplorer'
+import { SelectedFiles } from '@/components/SelectedFiles'
+import { useStore } from '@/store/useStore'
+import React from 'react'
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+type FileItem = {
+    name: string
+    path: string
+    type: "file" | "dir"
+    children?: FileItem[]
 }
+
+type GitHubContentItem = {
+    name: string
+    path: string
+    type: "file" | "dir"
+    sha: string
+    size: number
+    url: string
+    html_url: string
+    git_url: string
+    download_url: string | null
+}
+
+function page() {
+    const { selectedItems, isDialogOpen, useAuthToken, repoUrl, isLoading, error, fileData, githubToken, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setGithubToken, handleSelect }
+        = useStore()
+
+    // Load token from localStorage on component mount
+    React.useEffect(() => {
+        const savedToken = localStorage.getItem('github-token')
+        if (savedToken) {
+            setGithubToken(savedToken)
+        }
+    }, [setGithubToken, setUseAuthToken])
+
+    const fetchRepositoryContents = async (path: string = '') => {
+        try {
+            const params = new URLSearchParams({
+                repoUrl,
+                ...(path && { path }),
+                ...(useAuthToken && githubToken && { token: githubToken })
+            });
+
+            const response = await fetch(`/api/github?${params}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to fetch repository data');
+            }
+
+            if (Array.isArray(data)) {
+                return data.map((item: GitHubContentItem) => ({
+                    name: item.name,
+                    path: item.path,
+                    type: item.type,
+                    children: item.type === 'dir' ? [] : undefined
+                }));
+            }
+            return [];
+        } catch (error) {
+            console.error('Error fetching repository contents:', error);
+            throw error;
+        }
+    };
+
+    const handleFetch = async () => {
+        if (!repoUrl) {
+            setError('Please enter a GitHub repository URL');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const contents = await fetchRepositoryContents();
+            setFileData(contents);
+        } catch (error) {
+            setError(error instanceof Error ? error.message : 'Failed to fetch repository');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleTokenSave = (token: string) => {
+        localStorage.setItem('github-token', token)
+        setGithubToken(token)
+        setUseAuthToken(true)
+        setIsDialogOpen(false)
+    };
+
+    return (
+        <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-10'>
+            <div className='flex items-center justify-center h-[650px] outline-2 outline-white/15 outline-offset-4 rounded-2xl w-full max-w-[1200px]'>
+                {/* sidebar */}
+                <div className='w-[280px] bg-[#262626] h-full rounded-l-2xl relative'>
+                    <div className='py-10'>
+                        <FileExplorer
+                            data={fileData}
+                            onSelect={handleSelect}
+                            selectedItems={selectedItems}
+                            onLoadDirectory={fetchRepositoryContents}
+                        />
+                    </div>
+
+                    <div className='flex items-center gap-2 absolute top-4 left-4'>
+                        <span className='h-3 w-3 rounded-full border border-white/15' />
+                        <span className='h-3 w-3 rounded-full border border-white/15' />
+                        <span className='h-3 w-3 rounded-full border border-white/15' />
+                    </div>
+                </div>
+
+                {/* main */}
+                <div className='flex-1 bg-[#1E1E1E] h-full rounded-r-2xl relative'>
+                    <div className='flex items-center justify-center w-full p-10'>
+                        <div className='flex items-center gap-1 w-full rounded-full outline outline-white/15 outline-offset-4 focus-within:outline-2 focus-within:outline-white/20 transition-all duration-300'>
+                            <input
+                                type="text"
+                                placeholder='Enter github repo url here...'
+                                value={repoUrl}
+                                onChange={(e) => setRepoUrl(e.target.value)}
+                                className='bg-[#2e2e2e] text-white/80 text-sm font-medium w-full h-11 outline-none rounded-l-full px-5 rounded-rl-2xl'
+                            />
+                            <button
+                                onClick={handleFetch}
+                                disabled={isLoading}
+                                className={`text-[#A6EBA1] bg-[#31392f] font-semibold text-sm outline-none w-28 h-11 rounded-r-full flex items-center justify-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                {isLoading ? (
+                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                ) : (
+                                    <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>plug-2</title><g fill="currentColor"> <path fill-rule="evenodd" clip-rule="evenodd" d="M5.35528 8.46328C4.67183 7.77848 3.56372 7.77958 2.88033 8.46298C1.04246 10.3009 1.04178 13.2824 2.87967 15.1203C4.71756 16.9582 7.69841 16.9582 9.53631 15.1203C10.2211 14.4369 10.2204 13.3284 9.53699 12.645L5.35528 8.46328Z"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M16.7803 1.21967C17.0732 1.51256 17.0732 1.98744 16.7803 2.28033L15.6086 3.45203C16.9405 5.29199 16.7777 7.87891 15.1203 9.53631C14.4322 10.1368 13.3829 10.1082 12.7283 9.45365L8.54706 5.27232C7.89086 4.61741 7.86338 3.56763 8.4637 2.87964C10.1211 1.22223 12.708 1.05947 14.548 2.39136L15.7197 1.21967C16.0126 0.926777 16.4874 0.926777 16.7803 1.21967Z" fill-opacity="0.4"></path> <path d="M2.39136 14.548C2.53639 14.7483 2.69915 14.9398 2.87963 15.1203C3.06013 15.3008 3.25165 15.4636 3.45202 15.6086L2.28033 16.7803C1.98744 17.0732 1.51256 17.0732 1.21967 16.7803C0.926777 16.4874 0.926777 16.0126 1.21967 15.7197L2.39136 14.548Z"></path> <path d="M9.22631 12.3343L8.16565 11.2737L9.46962 9.96967C9.76251 9.67678 10.2374 9.67678 10.5303 9.96967C10.8232 10.2626 10.8232 10.7374 10.5303 11.0303L9.22631 12.3343Z"></path> <path d="M8.0303 7.46967C8.32319 7.76257 8.32319 8.23744 8.03029 8.53033L6.72631 9.83434L5.66565 8.77368L6.96964 7.46967C7.26253 7.17678 7.73741 7.17678 8.0303 7.46967Z"></path> </g></svg>
+                                        Fetch
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="px-10 text-red-400 text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <div>
+                        <SelectedFiles selectedItems={selectedItems} />
+                    </div>
+
+                    <div className='absolute bottom-7 left-10 flex flex-col items-center'>
+                        <div className='flex items-center gap-1'>
+                            <button
+                                onClick={() => { }}
+                                className={`bg-[#2e2e2e] text-white/60 rounded-full h-10 px-4 font-medium text-sm flex items-center gap-2 transition-all duration-300`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>clone</title><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="M10.75 1.75H3.75C2.64543 1.75 1.75 2.64543 1.75 3.75V10.75C1.75 11.8546 2.64543 12.75 3.75 12.75H10.75C11.8546 12.75 12.75 11.8546 12.75 10.75V3.75C12.75 2.64543 11.8546 1.75 10.75 1.75Z" fill="currentColor" fill-opacity="0.3" data-stroke="none" stroke="none"></path> <path d="M10.75 1.75H3.75C2.64543 1.75 1.75 2.64543 1.75 3.75V10.75C1.75 11.8546 2.64543 12.75 3.75 12.75H10.75C11.8546 12.75 12.75 11.8546 12.75 10.75V3.75C12.75 2.64543 11.8546 1.75 10.75 1.75Z"></path> <path d="M15 5.39499C15.733 5.69199 16.25 6.40999 16.25 7.24999V14.25C16.25 15.355 15.355 16.25 14.25 16.25H7.25002C6.41102 16.25 5.69202 15.733 5.39502 15"></path></g></svg>
+                                Copy content
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className='absolute bottom-4 right-10 flex flex-col items-center'>
+                        <div className='flex items-center gap-1'>
+                            <button
+                                onClick={() => setUseAuthToken(!useAuthToken)}
+                                className={`${useAuthToken ? 'bg-[#31392f] text-[#A6EBA1]' : 'bg-[#2e2e2e] text-white/80'} rounded-l-full h-10 px-4 font-medium text-sm flex items-center gap-2 transition-all duration-300`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>user-key</title><g fill="currentColor"><path d="M9 7.00049C10.6571 7.00049 12 5.65736 12 4.00049C12 2.34362 10.6571 1.00049 9 1.00049C7.34291 1.00049 6 2.34362 6 4.00049C6 5.65736 7.34291 7.00049 9 7.00049Z" fill-opacity="0.4"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M8.5 14.25C8.5 12.7312 9.73119 11.5 11.25 11.5C12.5088 11.5 13.57 12.3457 13.8965 13.5H17.25C17.6642 13.5 18 13.8358 18 14.25C18 14.6642 17.6642 15 17.25 15H16.5V15.75C16.5 16.1642 16.1642 16.5 15.75 16.5C15.3358 16.5 15 16.1642 15 15.75V15H13.8965C13.57 16.1543 12.5088 17 11.25 17C9.73119 17 8.5 15.7688 8.5 14.25ZM11.25 13C10.5596 13 10 13.5596 10 14.25C10 14.9404 10.5596 15.5 11.25 15.5C11.9404 15.5 12.5 14.9404 12.5 14.25C12.5 13.5596 11.9404 13 11.25 13Z"></path> <path d="M8.99999 8.50049C6.14167 8.50049 3.69058 10.2162 2.60517 12.6679C2.05162 13.9191 2.74425 15.3322 4.01259 15.7318C4.98685 16.0388 6.20082 16.323 7.60804 16.4418C7.22206 15.8019 7 15.0519 7 14.25C7 11.9028 8.90275 10 11.25 10C11.8742 10 12.4665 10.1344 13 10.3758V9.75882C11.8675 8.9661 10.489 8.50049 8.99999 8.50049Z" fill-opacity="0.4"></path></g></svg>
+                                Use Token
+                            </button>
+                            <button
+                                onClick={() => setIsDialogOpen(true)}
+                                className={`${useAuthToken ? 'bg-[#31392f] text-[#A6EBA1]' : 'bg-[#2e2e2e] text-white/80'} rounded-r-full h-10 px-4 font-semibold text-sm transition-all duration-300`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>dots</title><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="M9 9.5C9.27614 9.5 9.5 9.27614 9.5 9C9.5 8.72386 9.27614 8.5 9 8.5C8.72386 8.5 8.5 8.72386 8.5 9C8.5 9.27614 8.72386 9.5 9 9.5Z" fill="currentColor"></path> <path d="M3.25 9.5C3.52614 9.5 3.75 9.27614 3.75 9C3.75 8.72386 3.52614 8.5 3.25 8.5C2.97386 8.5 2.75 8.72386 2.75 9C2.75 9.27614 2.97386 9.5 3.25 9.5Z" fill="currentColor"></path> <path d="M14.75 9.5C15.0261 9.5 15.25 9.27614 15.25 9C15.25 8.72386 15.0261 8.5 14.75 8.5C14.4739 8.5 14.25 8.72386 14.25 9C14.25 9.27614 14.4739 9.5 14.75 9.5Z" fill="currentColor"></path></g></svg>
+                            </button>
+                        </div>
+                        <span className='text-white/50 text-xs mt-1'>Click to toggle</span>
+                    </div>
+                </div>
+
+                {/* fixed */}
+                <GitHubTokenDialog
+                    isOpen={isDialogOpen}
+                    onClose={() => setIsDialogOpen(false)}
+                    onSave={handleTokenSave}
+                />
+            </div>
+        </div>
+    )
+}
+
+export default page
