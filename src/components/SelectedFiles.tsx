@@ -43,7 +43,7 @@ export function SelectedFiles({ selectedItems }: SelectedFilesProps) {
                     <div>
                         <div className="flex items-center gap-2 mb-2 bg-white/10 p-2 rounded-lg">
                             <svg className='opacity-50' xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><title>folder</title><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="#F7F7F7"><path d="m.75,7.25V3.25c0-1.105.895-2,2-2h1.701c.607,0,1.18.275,1.56.748l.603.752h2.636c1.105,0,2,.895,2,2v2.5"></path><path d="m2.75,5.25h6.5c1.105,0,2,.895,2,2v1.5c0,1.105-.895,2-2,2H2.75c-1.105,0-2-.895-2-2v-1.5c0-1.105.895-2,2-2Z"></path></g></svg>
-                            <h3 className="text-sm font-medium text-white/80">Root</h3>
+                            <h3 className="text-sm font-medium text-white/80">/</h3>
                         </div>
                         <div className="space-y-1 pl-6 grid grid-cols-3 gap-2">
                             {groupedFiles[''].map((fileName) => (

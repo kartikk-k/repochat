@@ -1,12 +1,5 @@
 import { create } from 'zustand'
 
-type FileItem = {
-    name: string
-    path: string
-    type: "file" | "dir"
-    children?: FileItem[]
-}
-
 interface StoreState {
     selectedItems: string[]
     isDialogOpen: boolean

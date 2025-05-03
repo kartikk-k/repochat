@@ -4,32 +4,35 @@ import { useState, useEffect } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ChevronRight, ChevronDown } from "lucide-react"
 
-type FileItem = {
-    name: string
-    path: string
-    type: "file" | "dir"
-    children?: FileItem[]
-}
-
 interface FileExplorerProps {
     data: FileItem[]
     onSelect: (path: string, isSelected: boolean) => void
     selectedItems: string[]
-    onLoadDirectory?: (path: string) => Promise<FileItem[]>
 }
 
-export function FileExplorer({ data, onSelect, selectedItems, onLoadDirectory }: FileExplorerProps) {
+export function FileExplorer({ data, onSelect, selectedItems }: FileExplorerProps) {
     return (
         <div className="p-2 space-y-1">
             {data.map((item) => (
-                <FileExplorerItem
-                    key={item.path}
-                    item={item}
-                    onSelect={onSelect}
-                    isSelected={selectedItems.includes(item.path)}
-                    selectedItems={selectedItems}
-                    onLoadDirectory={onLoadDirectory}
-                />
+                item.name === "root" && item.type === "dir" ? (
+                    item.children?.map((child) => (
+                        <FileExplorerItem
+                            key={child.path}
+                            item={child}
+                            onSelect={onSelect}
+                            isSelected={selectedItems.includes(child.path)}
+                            selectedItems={selectedItems}
+                        />
+                    ))
+                ) : (
+                    <FileExplorerItem
+                        key={item.path}
+                        item={item}
+                        onSelect={onSelect}
+                        isSelected={selectedItems.includes(item.path)}
+                        selectedItems={selectedItems}
+                    />
+                )
             ))}
         </div>
     )
@@ -47,7 +50,7 @@ interface FileExplorerItemProps {
 function FileExplorerItem({ item, onSelect, isSelected, selectedItems, level = 0, onLoadDirectory }: FileExplorerItemProps) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [children, setChildren] = useState<FileItem[]>(item.children || [])
+    const [children, setChildren] = useState<FileItem[]>(item.type === "dir" ? item.children : [])
 
     useEffect(() => {
         if (item.type === "dir" && item.children) {
@@ -75,7 +78,7 @@ function FileExplorerItem({ item, onSelect, isSelected, selectedItems, level = 0
     }
 
     const areAllChildrenSelected = (item: FileItem): boolean => {
-        if (!item.children) return false
+        if (item.type !== "dir") return false
 
         let allSelected = true
         item.children.forEach((child) => {
