@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 interface StoreState {
-    selectedItems: string[]
+    selectedItems: FileItem[]
     isDialogOpen: boolean
     useAuthToken: boolean
     repoUrl: string
@@ -9,7 +9,7 @@ interface StoreState {
     error: string | null
     fileData: FileItem[]
     githubToken: string
-    setSelectedItems: (items: string[]) => void
+    setSelectedItems: (items: FileItem[]) => void
     setIsDialogOpen: (isOpen: boolean) => void
     setUseAuthToken: (useToken: boolean) => void
     setRepoUrl: (url: string) => void
@@ -17,7 +17,7 @@ interface StoreState {
     setError: (error: string | null) => void
     setFileData: (data: FileItem[]) => void
     setGithubToken: (token: string) => void
-    handleSelect: (path: string, isSelected: boolean) => void
+    handleSelect: (item: FileItem, isSelected: boolean) => void
 }
 
 export const useStore = create<StoreState>((set) => ({
@@ -37,10 +37,10 @@ export const useStore = create<StoreState>((set) => ({
     setError: (error) => set({ error }),
     setFileData: (data) => set({ fileData: data }),
     setGithubToken: (token) => set({ githubToken: token }),
-    handleSelect: (path, isSelected) =>
+    handleSelect: (item, isSelected) =>
         set((state) => ({
             selectedItems: isSelected
-                ? [...state.selectedItems, path]
-                : state.selectedItems.filter(item => item !== path)
+                ? [...state.selectedItems, item]
+                : state.selectedItems.filter(selectedItem => selectedItem.path !== item.path)
         }))
 })) 

@@ -6,7 +6,6 @@ import { SelectedFiles } from '@/components/SelectedFiles'
 import { useStore } from '@/store/useStore'
 import React from 'react'
 
-
 type GitHubContentItem = {
   name: string
   path: string
@@ -78,8 +77,6 @@ function page() {
     setUseAuthToken(true)
     setIsDialogOpen(false)
   };
-
-  console.log(fileData)
 
   return (
     <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-10'>

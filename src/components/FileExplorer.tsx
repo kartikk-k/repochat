@@ -6,8 +6,8 @@ import { ChevronRight, ChevronDown } from "lucide-react"
 
 interface FileExplorerProps {
     data: FileItem[]
-    onSelect: (path: string, isSelected: boolean) => void
-    selectedItems: string[]
+    onSelect: (item: FileItem, isSelected: boolean) => void
+    selectedItems: FileItem[]
 }
 
 export function FileExplorer({ data, onSelect, selectedItems }: FileExplorerProps) {
@@ -20,7 +20,7 @@ export function FileExplorer({ data, onSelect, selectedItems }: FileExplorerProp
                             key={child.path}
                             item={child}
                             onSelect={onSelect}
-                            isSelected={selectedItems.includes(child.path)}
+                            isSelected={selectedItems.some(selectedItem => selectedItem.path === child.path)}
                             selectedItems={selectedItems}
                         />
                     ))
@@ -29,7 +29,7 @@ export function FileExplorer({ data, onSelect, selectedItems }: FileExplorerProp
                         key={item.path}
                         item={item}
                         onSelect={onSelect}
-                        isSelected={selectedItems.includes(item.path)}
+                        isSelected={selectedItems.some(selectedItem => selectedItem.path === item.path)}
                         selectedItems={selectedItems}
                     />
                 )
@@ -40,9 +40,9 @@ export function FileExplorer({ data, onSelect, selectedItems }: FileExplorerProp
 
 interface FileExplorerItemProps {
     item: FileItem
-    onSelect: (path: string, isSelected: boolean) => void
+    onSelect: (item: FileItem, isSelected: boolean) => void
     isSelected: boolean
-    selectedItems: string[]
+    selectedItems: FileItem[]
     level?: number
     onLoadDirectory?: (path: string) => Promise<FileItem[]>
 }
@@ -64,17 +64,17 @@ function FileExplorerItem({ item, onSelect, isSelected, selectedItems, level = 0
         }
     }
 
-    // Get all child paths recursively
-    const getAllChildPaths = (item: FileItem): string[] => {
-        let paths: string[] = [item.path]
+    // Get all child items recursively
+    const getAllChildItems = (item: FileItem): FileItem[] => {
+        let items: FileItem[] = [item]
 
         if (item.type === "dir" && item.children) {
             item.children.forEach((child) => {
-                paths = [...paths, ...getAllChildPaths(child)]
+                items = [...items, ...getAllChildItems(child)]
             })
         }
 
-        return paths
+        return items
     }
 
     const areAllChildrenSelected = (item: FileItem): boolean => {
@@ -84,7 +84,7 @@ function FileExplorerItem({ item, onSelect, isSelected, selectedItems, level = 0
         item.children.forEach((child) => {
             if(allSelected === false) return false
             if (child.type === "file") {
-                if (!selectedItems.includes(child.path)) {
+                if (!selectedItems.some(selectedItem => selectedItem.path === child.path)) {
                     allSelected = false
                 }
             } else {
@@ -99,13 +99,13 @@ function FileExplorerItem({ item, onSelect, isSelected, selectedItems, level = 0
     const handleCheckboxChange = (checked: boolean) => {
         // If it's a directory, select/deselect all children
         if (item.type === "dir" && children) {
-            const allPaths = getAllChildPaths(item)
-            allPaths.forEach(path => {
-                onSelect(path, checked)
+            const allItems = getAllChildItems(item)
+            allItems.forEach(item => {
+                onSelect(item, checked)
             })
         } else {
             // For files, just toggle the selection
-            onSelect(item.path, checked)
+            onSelect(item, checked)
         }
     }
 
@@ -155,7 +155,7 @@ function FileExplorerItem({ item, onSelect, isSelected, selectedItems, level = 0
                             key={child.path}
                             item={child}
                             onSelect={onSelect}
-                            isSelected={selectedItems.includes(child.path)}
+                            isSelected={selectedItems.some(selectedItem => selectedItem.path === child.path)}
                             selectedItems={selectedItems}
                             level={level + 1}
                             onLoadDirectory={onLoadDirectory}
