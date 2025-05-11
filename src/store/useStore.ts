@@ -1,22 +1,29 @@
 import { create } from 'zustand'
 
 interface StoreState {
-    selectedItems: FileItem[]
-    isDialogOpen: boolean
-    useAuthToken: boolean
     repoUrl: string
-    isLoading: boolean
-    error: string | null
-    fileData: FileItem[]
-    githubToken: string
-    setSelectedItems: (items: FileItem[]) => void
-    setIsDialogOpen: (isOpen: boolean) => void
-    setUseAuthToken: (useToken: boolean) => void
     setRepoUrl: (url: string) => void
-    setIsLoading: (loading: boolean) => void
-    setError: (error: string | null) => void
-    setFileData: (data: FileItem[]) => void
+    selectedItems: FileItem[]
+    setSelectedItems: (items: FileItem[]) => void
+
+    repoContent: { path: string, content: string }[]
+    setRepoContent: (content: { path: string, content: string }[]) => void
+    addRepoContent: (content: { path: string, content: string }) => void
+
+    githubToken: string
     setGithubToken: (token: string) => void
+    useAuthToken: boolean
+    setUseAuthToken: (useToken: boolean) => void
+    isDialogOpen: boolean
+    setIsDialogOpen: (isOpen: boolean) => void
+
+    isLoading: boolean
+    setIsLoading: (loading: boolean) => void
+    error: string | null
+    setError: (error: string | null) => void
+    fileData: FileItem[]
+    setFileData: (data: FileItem[]) => void
+
     handleSelect: (item: FileItem, isSelected: boolean) => void
 }
 
@@ -24,10 +31,12 @@ export const useStore = create<StoreState>((set) => ({
     selectedItems: [],
     isDialogOpen: false,
     useAuthToken: false,
-    repoUrl: '',
+    repoUrl: 'https://github.com/kartikk-k/repochat',
     isLoading: false,
     error: null,
     fileData: [],
+    repoContent: [],
+
     githubToken: typeof window !== 'undefined' ? localStorage.getItem('github-token') || '' : '',
     setSelectedItems: (items) => set({ selectedItems: items }),
     setIsDialogOpen: (isOpen) => set({ isDialogOpen: isOpen }),
@@ -37,6 +46,14 @@ export const useStore = create<StoreState>((set) => ({
     setError: (error) => set({ error }),
     setFileData: (data) => set({ fileData: data }),
     setGithubToken: (token) => set({ githubToken: token }),
+    setRepoContent: (content) => set({ repoContent: content }),
+
+    addRepoContent: (content) => set((state) => ({
+        repoContent: state.repoContent.some(item => item.path === content.path)
+            ? state.repoContent.map(item => item.path === content.path ? content : item)
+            : [...state.repoContent, content]
+    })),
+
     handleSelect: (item, isSelected) =>
         set((state) => ({
             selectedItems: isSelected

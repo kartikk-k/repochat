@@ -46,7 +46,6 @@ export async function GET(request: Request) {
         )
 
         const data = await response.json() as { sha: string, url: string, tree: { path: string, type: string, size: number, url: string }[] }
-        // console.log(data)
 
         let structure: FileItem[] = [{ name: 'root', path: '', type: 'dir', children: [] }]
 
