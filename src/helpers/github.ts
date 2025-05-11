@@ -1,5 +1,3 @@
-import { FileItem } from '../../typings'
-
 export async function fetchRepositoryContents(repoUrl: string, githubToken?: string) {
   if (!repoUrl) {
     throw new Error('Repository URL is required');
