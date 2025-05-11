@@ -1,4 +1,4 @@
-export type FileItem = {
+type FileItem = {
     name: string
     path: string
 } & ({
