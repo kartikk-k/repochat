@@ -19,8 +19,8 @@ function buildTreeString(nodes: any, prefix = '') {
 
 export default function getFolderStructure() {
     const store = useStore.getState()
-    const { selectedItems } = store
+    const { fileData } = store
 
-    const tree = '/\n' + buildTreeString(selectedItems)
+    const tree = '/\n' + buildTreeString(fileData)
     return tree
 }   
