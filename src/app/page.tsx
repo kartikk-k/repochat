@@ -4,10 +4,14 @@ import { GitHubTokenDialog } from '@/components/APIKeyDialog'
 import { FileExplorer } from '@/components/FileExplorer'
 import { SelectedFiles } from '@/components/SelectedFiles'
 import getFolderStructure from '@/helpers/GetFolderStructure'
+import { fetchRepositoryContents } from '@/helpers/github'
+import { fetchRawContent } from '@/helpers/githubRaw'
 import { useStore } from '@/store/useStore'
 import React, { useEffect, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 
+
+const notAllowedExtentions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
 
 function page() {
   const { selectedItems, isDialogOpen, useAuthToken, repoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setGithubToken, handleSelect }
@@ -23,28 +27,6 @@ function page() {
     }
   }, [setGithubToken, setUseAuthToken])
 
-  const fetchRepositoryContents = async (path: string = '') => {
-    try {
-      const params = new URLSearchParams({
-        repoUrl,
-        ...(path && { path }),
-        ...(useAuthToken && githubToken && { token: githubToken })
-      });
-
-      const response = await fetch(`/api/github?${params}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch repository data');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching repository contents:', error);
-      throw error;
-    }
-  };
-
   const handleFetch = async () => {
     if (!repoUrl) {
       setError('Please enter a GitHub repository URL');
@@ -55,8 +37,8 @@ function page() {
     setError(null);
 
     try {
-      const contents = await fetchRepositoryContents();
-      setFileData(contents.filter((i: any) => i.type === 'dir' || i.type === 'file') as FileItem[]); // filter out any other types
+      const contents = await fetchRepositoryContents(repoUrl, useAuthToken ? githubToken : undefined);
+      setFileData(contents.filter((i) => i.type === 'dir' || i.type === 'file'));
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch repository');
     } finally {
@@ -71,36 +53,42 @@ function page() {
     setIsDialogOpen(false)
   };
 
-
   useEffect(() => {
     if (!selectedItems.length) return
     handleSelectedItemsChange()
   }, [selectedItems])
 
   const handleSelectedItemsChange = async () => {
-    if (!selectedItems.length) return
+    if (!selectedItems.length) return;
 
-    const availableRawContent = repoContent.flatMap(item => item.path)
+    const availableRawContent = repoContent.flatMap(item => item.path);
+    const pathWithoutRawContent = selectedItems
+      .filter(item => item.type === 'file')
+      .filter(item => !notAllowedExtentions.includes(item.path.split('.').pop() || ''))
+      .filter(item => !availableRawContent.includes(item.path))
+      .map(item => item.path);
 
-    const pathWithoutRawContent = selectedItems.filter(item => item.type === 'file').filter(item => !availableRawContent.includes(item.path)).map(item => item.path)
+    setFetchingContent(true);
 
-    setFetchingContent(true)
+    try {
+      const data = await Promise.allSettled(
+        pathWithoutRawContent.map(path => 
+          fetchRawContent(repoUrl, path, githubToken)
+        )
+      );
 
-    const data = await Promise.allSettled(pathWithoutRawContent.map(async (path) => {
-      const response = await fetch(`/api/github/raw?repoUrl=${repoUrl}&path=${path}&token=${githubToken}`)
-      const content = await response.json()
-      return { path, content }
-    }))
-
-    setFetchingContent(false)
-
-    data.forEach(item => {
-      if (item.status === 'fulfilled') {
-        const { path, content } = item.value
-        addRepoContent({ path, content: content?.content })
-      }
-    })
-  }
+      data.forEach(item => {
+        if (item.status === 'fulfilled') {
+          const { path, content } = item.value;
+          addRepoContent({ path, content });
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching raw content:', error);
+    } finally {
+      setFetchingContent(false);
+    }
+  };
 
   const handleUseToken = () => {
     if (!githubToken) {
@@ -117,7 +105,7 @@ function page() {
     // all the selected files content
     let filesContent = ''
 
-    selectedItems.forEach(item => {
+    selectedItems.filter(item => !notAllowedExtentions.includes(item.path.split('.').pop() || '')).forEach(item => {
       const rawContent = repoContent.find(i => i.path === item.path)?.content
       if (!rawContent) return
       if (item.type === 'file') {
@@ -268,10 +256,6 @@ ${filesContent}
           onClose={() => setIsDialogOpen(false)}
           onSave={handleTokenSave}
         />
-
-        {/* <div className='absolute top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center'>
-
-        </div> */}
 
         <Toaster />
       </div>

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, Key, Eye, EyeOff } from "lucide-react"
+import { useStore } from "@/store/useStore"
 
 interface GitHubTokenDialogProps {
   isOpen: boolean
@@ -24,6 +25,8 @@ export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialog
   const [token, setToken] = useState("")
   const [error, setError] = useState("")
   const [showToken, setShowToken] = useState(false)
+
+  const { setUseAuthToken, setGithubToken } = useStore()
 
   useEffect(() => {
     // Reset state when dialog opens
@@ -50,6 +53,9 @@ export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialog
     localStorage.removeItem("github-token")
     setToken("")
     setError("")
+    setUseAuthToken(false)
+    setGithubToken("")
+    onClose()
   }
 
   return (
