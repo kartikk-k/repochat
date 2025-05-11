@@ -6,6 +6,7 @@ import { SelectedFiles } from '@/components/SelectedFiles'
 import getFolderStructure from '@/helpers/GetFolderStructure'
 import { useStore } from '@/store/useStore'
 import React, { useEffect, useState } from 'react'
+import { Toaster, toast } from 'sonner'
 
 
 function page() {
@@ -102,7 +103,7 @@ function page() {
   }
 
   const handleUseToken = () => {
-    if(!githubToken){
+    if (!githubToken) {
       setIsDialogOpen(true)
     } else {
       setUseAuthToken(!useAuthToken)
@@ -110,6 +111,7 @@ function page() {
   }
 
   const handleCopyContent = () => {
+    if(!selectedItems.length) return
     const tree = getFolderStructure()
 
     // all the selected files content
@@ -139,6 +141,15 @@ ${filesContent}
 `
     // copy to clipboard
     navigator.clipboard.writeText(finalContent)
+    toast.custom((t) => (
+      <div className={`${t} flex flex-col bg-[#31392f] text-[#A6EBA1] font-medium rounded-xl px-4 justify-center h-[64px] min-w-[250px] outline outline-[#A6EBA1]/20 outline-offset-4`}>
+        <p>Propmt copied</p>
+        <p className='text-sm opacity-70'>Copied to clipboard, paste it in your favorite app</p>
+      </div>
+    ), {
+      duration: 3000,
+      position: 'top-right',
+    })
   }
 
   return (
@@ -212,7 +223,8 @@ ${filesContent}
             <div>
               <button
                 onClick={handleCopyContent}
-                className={` text-white/60 bg-[#2e2e2e] rounded-full h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
+                disabled={!selectedItems.length}
+                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-full h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
               >
                 {fetchingContent ? (
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -261,6 +273,7 @@ ${filesContent}
 
         </div> */}
 
+        <Toaster />
       </div>
     </div>
   )
