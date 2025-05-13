@@ -14,7 +14,7 @@ import { Toaster, toast } from 'sonner'
 const notAllowedExtentions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
 
 function page() {
-  const { selectedItems, isDialogOpen, useAuthToken, repoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setGithubToken, handleSelect }
+  const { selectedItems, isDialogOpen, useAuthToken, repoContent, setRepoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setGithubToken, handleSelect }
     = useStore()
 
   const [fetchingContent, setFetchingContent] = useState(false)
@@ -39,6 +39,10 @@ function page() {
     try {
       const contents = await fetchRepositoryContents(repoUrl, useAuthToken ? githubToken : undefined);
       setFileData(contents.filter((i) => i.type === 'dir' || i.type === 'file'));
+      // reset selected items and repo content
+      setSelectedItems([])
+      setRepoContent([])
+
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch repository');
     } finally {
