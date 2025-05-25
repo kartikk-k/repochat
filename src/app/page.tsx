@@ -75,18 +75,16 @@ function page() {
     setFetchingContent(true);
 
     try {
-      const data = await Promise.allSettled(
-        pathWithoutRawContent.map(path => 
-          fetchRawContent(repoUrl, path, githubToken)
-        )
-      );
-
-      data.forEach(item => {
-        if (item.status === 'fulfilled') {
-          const { path, content } = item.value;
+      for (const i of pathWithoutRawContent) {
+        try {
+          console.log("Client", i)
+          const { path, content } = await fetchRawContent(repoUrl, i, useAuthToken ? githubToken : undefined);
           addRepoContent({ path, content });
+        } catch (error) {
+          console.error(`Error fetching raw content for path ${i}:`, error);
         }
-      });
+      }
+
     } catch (error) {
       console.error('Error fetching raw content:', error);
     } finally {
@@ -103,7 +101,7 @@ function page() {
   }
 
   const handleCopyContent = () => {
-    if(!selectedItems.length) return
+    if (!selectedItems.length) return
     const tree = getFolderStructure()
 
     // all the selected files content

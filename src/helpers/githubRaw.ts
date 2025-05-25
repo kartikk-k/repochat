@@ -3,22 +3,14 @@ export async function fetchRawContent(repoUrl: string, path: string, githubToken
     throw new Error('Repository URL and path are required');
   }
 
-  const [owner, repo] = repoUrl.split('/github.com/')[1].split('/').splice(0, 2);
-  const headers: HeadersInit = {
-    'Accept': 'application/vnd.github.v3+json',
-  };
+  console.log(path)
 
-  if (githubToken) {
-    headers['Authorization'] = `token ${githubToken}`;
-  }
-
-  const url = `https://raw.githubusercontent.com/${owner}/${repo}/HEAD/${path}`;
-  const response = await fetch(url, { headers });
-
+  const response = await fetch(`/api/github/raw?repoUrl=${repoUrl}&path=${path}&githubToken=${githubToken ? githubToken : ''}`);
   if (!response.ok) {
     throw new Error('Failed to fetch raw content');
   }
 
-  const content = await response.text();
+  const content = await response.json();
+  console.log(content)
   return { path, content };
 } 
