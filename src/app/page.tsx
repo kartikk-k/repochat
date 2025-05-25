@@ -75,16 +75,22 @@ function page() {
     setFetchingContent(true);
 
     try {
-      for (const i of pathWithoutRawContent) {
-        try {
-          console.log("Client", i)
-          const { path, content } = await fetchRawContent(repoUrl, i, useAuthToken ? githubToken : undefined);
-          addRepoContent({ path, content });
-        } catch (error) {
-          console.error(`Error fetching raw content for path ${i}:`, error);
-        }
-      }
+      // Process files in batches of 5
+      for (let i = 0; i < pathWithoutRawContent.length; i += 5) {
+        const batch = pathWithoutRawContent.slice(i, i + 5);
+        const promises = batch.map(async (path) => {
+          try {
+            console.log("Client", path);
+            const { path: filePath, content } = await fetchRawContent(repoUrl, path, useAuthToken ? githubToken : undefined);
+            addRepoContent({ path: filePath, content });
+          } catch (error) {
+            console.error(`Error fetching raw content for path ${path}:`, error);
+          }
+        });
 
+        // Wait for all promises in the current batch to complete
+        await Promise.all(promises);
+      }
     } catch (error) {
       console.error('Error fetching raw content:', error);
     } finally {
@@ -112,7 +118,7 @@ function page() {
       if (!rawContent) return
       if (item.type === 'file') {
         filesContent += `
-        ${item.path}
+        >>>> ${item.path} <<<<
         ${rawContent}
         -------------------------------------------
         \n
