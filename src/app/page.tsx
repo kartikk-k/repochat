@@ -233,7 +233,7 @@ ${filesContent}
                 multiple
                 className='hidden'
                 onChange={handleFolderChange}
-                webkitdirectory='true'
+                {...{ webkitdirectory: 'true', directory: '' }}
               />
             </div>
           </div>
