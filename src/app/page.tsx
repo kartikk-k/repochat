@@ -14,7 +14,7 @@ import { Eye } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 
 
-const notAllowedExtentions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
+const notAllowedExtensions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
 
 function page() {
   const { selectedItems, isDialogOpen, useAuthToken, repoContent, setRepoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, localFiles, prompt, isPromptDialogOpen, setPrompt, setIsPromptDialogOpen, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setLocalFiles, setGithubToken, handleSelect }
@@ -83,7 +83,7 @@ function page() {
     const availableRawContent = repoContent.flatMap(item => item.path);
     const pathWithoutRawContent = selectedItems
       .filter(item => item.type === 'file')
-      .filter(item => !notAllowedExtentions.includes(item.path.split('.').pop() || ''))
+      .filter(item => !notAllowedExtensions.includes(item.path.split('.').pop() || ''))
       .filter(item => !availableRawContent.includes(item.path))
       .map(item => item.path);
 
@@ -130,19 +130,22 @@ function page() {
   const generatePrompt = () => {
     const tree = getFolderStructure()
 
-    let filesContent = ''
-    selectedItems
-      .filter(item => !notAllowedExtentions.includes(item.path.split('.').pop() || ''))
-      .forEach(item => {
+    const filesContent = selectedItems
+      .filter(item => !notAllowedExtensions.includes(item.path.split('.').pop() || ''))
+      .filter(item => item.type === 'file')
+      .map(item => {
         const rawContent = repoContent.find(i => i.path === item.path)?.content
-        if (!rawContent) return
-        if (item.type === 'file') {
-          filesContent += `\n>>>> ${item.path} <<<<\n${rawContent}\n-------------------------------------------\n`
-        }
+        if (!rawContent) return ''
+        return `### FILE: ${item.path}\n\u0060\u0060\u0060\n${rawContent}\n\u0060\u0060\u0060\n`
       })
+      .join('\n')
 
-    const finalContent = `\nProject structure:\n${tree}-------------------------------------------\n-------------------------------------------\n\nFiles content:\n${filesContent}`
-    return finalContent
+    return [
+      '## PROJECT TREE',
+      tree,
+      '## FILE CONTENTS',
+      filesContent,
+    ].join('\n')
   }
 
   const handlePreview = () => {
@@ -159,7 +162,7 @@ function page() {
     navigator.clipboard.writeText(content)
     toast.custom((t) => (
       <div className={`${t} flex flex-col bg-[#31392f] text-[#A6EBA1] font-medium rounded-xl px-4 justify-center h-[64px] min-w-[250px] outline outline-[#A6EBA1]/20 outline-offset-4`}>
-        <p>Propmt copied</p>
+        <p>Prompt copied</p>
         <p className='text-sm opacity-70'>Copied to clipboard, paste it in your favorite app</p>
       </div>
     ), {

@@ -34,7 +34,7 @@ export function PromptPreviewDialog({ isOpen, onClose }: PromptPreviewDialogProp
           />
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2">
           <Button
             onClick={() => {
               navigator.clipboard.writeText(prompt);
