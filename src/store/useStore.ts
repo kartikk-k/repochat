@@ -24,6 +24,9 @@ interface StoreState {
     fileData: FileItem[]
     setFileData: (data: FileItem[]) => void
 
+    localFiles: Record<string, File>
+    setLocalFiles: (files: Record<string, File>) => void
+
     handleSelect: (item: FileItem, isSelected: boolean) => void
 }
 
@@ -35,6 +38,7 @@ export const useStore = create<StoreState>((set) => ({
     isLoading: false,
     error: null,
     fileData: [],
+    localFiles: {},
     repoContent: [],
 
     githubToken: typeof window !== 'undefined' ? localStorage.getItem('github-token') || '' : '',
@@ -45,6 +49,7 @@ export const useStore = create<StoreState>((set) => ({
     setIsLoading: (loading) => set({ isLoading: loading }),
     setError: (error) => set({ error }),
     setFileData: (data) => set({ fileData: data }),
+    setLocalFiles: (files) => set({ localFiles: files }),
     setGithubToken: (token) => set({ githubToken: token }),
     setRepoContent: (content) => set({ repoContent: content }),
 

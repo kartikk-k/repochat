@@ -6,6 +6,7 @@ import { SelectedFiles } from '@/components/SelectedFiles'
 import getFolderStructure from '@/helpers/GetFolderStructure'
 import { fetchRepositoryContents } from '@/helpers/github'
 import { fetchRawContent } from '@/helpers/githubRaw'
+import { parseLocalFiles } from '@/helpers/parseLocalFiles'
 import { useStore } from '@/store/useStore'
 import React, { useEffect, useState } from 'react'
 import { Toaster, toast } from 'sonner'
@@ -14,10 +15,11 @@ import { Toaster, toast } from 'sonner'
 const notAllowedExtentions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
 
 function page() {
-  const { selectedItems, isDialogOpen, useAuthToken, repoContent, setRepoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setGithubToken, handleSelect }
+  const { selectedItems, isDialogOpen, useAuthToken, repoContent, setRepoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, localFiles, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setLocalFiles, setGithubToken, handleSelect }
     = useStore()
 
   const [fetchingContent, setFetchingContent] = useState(false)
+  const folderInputRef = React.useRef<HTMLInputElement>(null)
 
   // Load token from localStorage on component mount
   React.useEffect(() => {
@@ -26,6 +28,17 @@ function page() {
       setGithubToken(savedToken)
     }
   }, [setGithubToken, setUseAuthToken])
+
+  const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    const { structure, fileMap } = parseLocalFiles(files)
+    setFileData(structure)
+    setLocalFiles(fileMap)
+    setRepoUrl('')
+    setSelectedItems([])
+    setRepoContent([])
+  }
 
   const handleFetch = async () => {
     if (!repoUrl) {
@@ -75,21 +88,27 @@ function page() {
     setFetchingContent(true);
 
     try {
-      // Process files in batches of 5
-      for (let i = 0; i < pathWithoutRawContent.length; i += 5) {
-        const batch = pathWithoutRawContent.slice(i, i + 5);
-        const promises = batch.map(async (path) => {
-          try {
-            console.log("Client", path);
-            const { path: filePath, content } = await fetchRawContent(repoUrl, path, useAuthToken ? githubToken : undefined);
-            addRepoContent({ path: filePath, content });
-          } catch (error) {
-            console.error(`Error fetching raw content for path ${path}:`, error);
-          }
-        });
-
-        // Wait for all promises in the current batch to complete
-        await Promise.all(promises);
+      if (repoUrl) {
+        // Process files in batches of 5
+        for (let i = 0; i < pathWithoutRawContent.length; i += 5) {
+          const batch = pathWithoutRawContent.slice(i, i + 5);
+          const promises = batch.map(async (path) => {
+            try {
+              const { path: filePath, content } = await fetchRawContent(repoUrl, path, useAuthToken ? githubToken : undefined);
+              addRepoContent({ path: filePath, content });
+            } catch (error) {
+              console.error(`Error fetching raw content for path ${path}:`, error);
+            }
+          });
+          await Promise.all(promises);
+        }
+      } else {
+        for (const path of pathWithoutRawContent) {
+          const file = localFiles[path];
+          if (!file) continue;
+          const content = await file.text();
+          addRepoContent({ path, content });
+        }
       }
     } catch (error) {
       console.error('Error fetching raw content:', error);
@@ -201,6 +220,21 @@ ${filesContent}
                   </>
                 )}
               </button>
+              <button
+                type="button"
+                onClick={() => folderInputRef.current?.click()}
+                className='text-[#A6EBA1] bg-[#31392f] font-semibold text-sm outline-none h-11 px-4 rounded-full flex items-center ml-2'
+              >
+                Upload Folder
+              </button>
+              <input
+                ref={folderInputRef}
+                type="file"
+                multiple
+                className='hidden'
+                onChange={handleFolderChange}
+                webkitdirectory='true'
+              />
             </div>
           </div>
 
