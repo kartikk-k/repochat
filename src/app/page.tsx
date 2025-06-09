@@ -1,6 +1,7 @@
 "use client"
 
 import { GitHubTokenDialog } from '@/components/APIKeyDialog'
+import { PromptPreviewDialog } from '@/components/PromptPreviewDialog'
 import { FileExplorer } from '@/components/FileExplorer'
 import { SelectedFiles } from '@/components/SelectedFiles'
 import getFolderStructure from '@/helpers/GetFolderStructure'
@@ -9,13 +10,14 @@ import { fetchRawContent } from '@/helpers/githubRaw'
 import { parseLocalFiles } from '@/helpers/parseLocalFiles'
 import { useStore } from '@/store/useStore'
 import React, { useEffect, useState } from 'react'
+import { Eye } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 
 
 const notAllowedExtentions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
 
 function page() {
-  const { selectedItems, isDialogOpen, useAuthToken, repoContent, setRepoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, localFiles, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setLocalFiles, setGithubToken, handleSelect }
+  const { selectedItems, isDialogOpen, useAuthToken, repoContent, setRepoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, localFiles, prompt, isPromptDialogOpen, setPrompt, setIsPromptDialogOpen, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setLocalFiles, setGithubToken, handleSelect }
     = useStore()
 
   const [fetchingContent, setFetchingContent] = useState(false)
@@ -125,37 +127,36 @@ function page() {
     }
   }
 
-  const handleCopyContent = () => {
-    if (!selectedItems.length) return
+  const generatePrompt = () => {
     const tree = getFolderStructure()
 
-    // all the selected files content
     let filesContent = ''
+    selectedItems
+      .filter(item => !notAllowedExtentions.includes(item.path.split('.').pop() || ''))
+      .forEach(item => {
+        const rawContent = repoContent.find(i => i.path === item.path)?.content
+        if (!rawContent) return
+        if (item.type === 'file') {
+          filesContent += `\n>>>> ${item.path} <<<<\n${rawContent}\n-------------------------------------------\n`
+        }
+      })
 
-    selectedItems.filter(item => !notAllowedExtentions.includes(item.path.split('.').pop() || '')).forEach(item => {
-      const rawContent = repoContent.find(i => i.path === item.path)?.content
-      if (!rawContent) return
-      if (item.type === 'file') {
-        filesContent += `
-        >>>> ${item.path} <<<<
-        ${rawContent}
-        -------------------------------------------
-        \n
-        `
-      }
-    })
+    const finalContent = `\nProject structure:\n${tree}-------------------------------------------\n-------------------------------------------\n\nFiles content:\n${filesContent}`
+    return finalContent
+  }
 
-    const finalContent = `
-Project structure:
-${tree}
--------------------------------------------
--------------------------------------------
+  const handlePreview = () => {
+    if (!selectedItems.length) return
+    const content = generatePrompt()
+    setPrompt(content)
+    setIsPromptDialogOpen(true)
+  }
 
-Files content:
-${filesContent}
-`
-    // copy to clipboard
-    navigator.clipboard.writeText(finalContent)
+  const handleCopyContent = () => {
+    if (!selectedItems.length) return
+    const content = prompt || generatePrompt()
+    setPrompt(content)
+    navigator.clipboard.writeText(content)
     toast.custom((t) => (
       <div className={`${t} flex flex-col bg-[#31392f] text-[#A6EBA1] font-medium rounded-xl px-4 justify-center h-[64px] min-w-[250px] outline outline-[#A6EBA1]/20 outline-offset-4`}>
         <p>Propmt copied</p>
@@ -250,7 +251,15 @@ ${filesContent}
 
           <div className='absolute bottom-0 left-0 right-0 flex items-start justify-between px-10 py-2 bg-[#1E1E1E]'>
 
-            <div>
+            <div className='flex gap-2'>
+              <button
+                onClick={handlePreview}
+                disabled={!selectedItems.length}
+                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-full h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
+              >
+                <Eye className='h-4 w-4' />
+                Preview
+              </button>
               <button
                 onClick={handleCopyContent}
                 disabled={!selectedItems.length}
@@ -297,6 +306,10 @@ ${filesContent}
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           onSave={handleTokenSave}
+        />
+        <PromptPreviewDialog
+          isOpen={isPromptDialogOpen}
+          onClose={() => setIsPromptDialogOpen(false)}
         />
 
         <Toaster />
