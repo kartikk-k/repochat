@@ -27,6 +27,11 @@ interface StoreState {
     localFiles: Record<string, File>
     setLocalFiles: (files: Record<string, File>) => void
 
+    prompt: string
+    setPrompt: (prompt: string) => void
+    isPromptDialogOpen: boolean
+    setIsPromptDialogOpen: (isOpen: boolean) => void
+
     handleSelect: (item: FileItem, isSelected: boolean) => void
 }
 
@@ -40,6 +45,8 @@ export const useStore = create<StoreState>((set) => ({
     fileData: [],
     localFiles: {},
     repoContent: [],
+    prompt: '',
+    isPromptDialogOpen: false,
 
     githubToken: typeof window !== 'undefined' ? localStorage.getItem('github-token') || '' : '',
     setSelectedItems: (items) => set({ selectedItems: items }),
@@ -52,6 +59,8 @@ export const useStore = create<StoreState>((set) => ({
     setLocalFiles: (files) => set({ localFiles: files }),
     setGithubToken: (token) => set({ githubToken: token }),
     setRepoContent: (content) => set({ repoContent: content }),
+    setPrompt: (prompt) => set({ prompt }),
+    setIsPromptDialogOpen: (isOpen) => set({ isPromptDialogOpen: isOpen }),
 
     addRepoContent: (content) => set((state) => ({
         repoContent: state.repoContent.some(item => item.path === content.path)
