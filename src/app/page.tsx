@@ -161,7 +161,7 @@ function page() {
     setPrompt(content)
     navigator.clipboard.writeText(content)
     toast.custom((t) => (
-      <div className={`${t} flex flex-col bg-[#31392f] text-[#A6EBA1] font-medium rounded-xl px-4 justify-center h-[64px] min-w-[250px] outline outline-[#A6EBA1]/20 outline-offset-4`}>
+      <div className={`${t} flex flex-col bg-brand text-brand-foreground font-medium rounded-xl px-4 justify-center h-[64px] min-w-[250px] outline outline-brand-foreground/20 outline-offset-4`}>
         <p>Prompt copied</p>
         <p className='text-sm opacity-70'>Copied to clipboard, paste it in your favorite app</p>
       </div>
@@ -172,10 +172,10 @@ function page() {
   }
 
   return (
-    <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-10'>
+    <div className='min-h-screen bg-background flex flex-col items-center justify-center px-10'>
       <div className='flex items-center justify-center h-[650px] outline-2 outline-white/15 outline-offset-4 rounded-2xl w-full max-w-[1200px] overflow-hidden relative'>
         {/* sidebar */}
-        <div className='w-[280px] bg-[#262626] h-full rounded-l-2xl relative'>
+        <div className='w-[280px] bg-sidebar h-full rounded-l-2xl relative'>
           <div className='py-10 h-full overflow-y-auto'>
             <FileExplorer
               data={fileData}
@@ -192,7 +192,7 @@ function page() {
         </div>
 
         {/* main */}
-        <div className='flex-1 bg-[#1E1E1E] h-full rounded-r-2xl relative'>
+        <div className='flex-1 bg-card h-full rounded-r-2xl relative'>
           <div className='flex items-center justify-center w-full p-10'>
             <div className='flex items-center gap-1 w-full rounded-full outline outline-white/15 outline-offset-4 focus-within:outline-2 focus-within:outline-white/20 transition-all duration-300'>
               <input
@@ -205,7 +205,7 @@ function page() {
                     handleFetch()
                   }
                 }}
-                className='bg-[#2e2e2e] text-white/80 text-sm font-medium w-full h-11 outline-none rounded-l-full px-5 rounded-rl-2xl'
+                className='bg-input text-foreground/80 text-sm font-medium w-full h-11 outline-none rounded-l-full px-5 rounded-rl-2xl'
               />
 
               <div className='flex items-center gap-1'>
@@ -213,7 +213,7 @@ function page() {
                   title='Fetch from Github'
                   onClick={handleFetch}
                   disabled={isLoading}
-                  className={`text-[#A6EBA1] bg-[#31392f] font-semibold text-sm outline-none w-28 h-11 flex items-center justify-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`text-brand-foreground bg-brand font-semibold text-sm outline-none w-28 h-11 flex items-center justify-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isLoading ? (
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -231,7 +231,7 @@ function page() {
                   title='Upload Folder'
                   type="button"
                   onClick={() => folderInputRef.current?.click()}
-                  className='text-[#A6EBA1] bg-[#31392f] px-4 flex items-center justify-center font-semibold text-sm outline-none h-11 rounded-r-full gap-2'
+                  className='text-brand-foreground bg-brand px-4 flex items-center justify-center font-semibold text-sm outline-none h-11 rounded-r-full gap-2'
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>move-obj-up</title><g fill="currentColor"><path opacity="0.4" d="M14.25 12H3.75C2.7835 12 2 12.7835 2 13.75V14.75C2 15.7165 2.7835 16.5 3.75 16.5H14.25C15.2165 16.5 16 15.7165 16 14.75V13.75C16 12.7835 15.2165 12 14.25 12Z"></path> <path d="M6.28 6.03005L8.25 4.06002V9.74905C8.25 10.163 8.586 10.499 9 10.499C9.414 10.499 9.75 10.163 9.75 9.74905V4.061L11.72 6.03103C11.866 6.17703 12.058 6.251 12.25 6.251C12.442 6.251 12.634 6.17803 12.78 6.03103C13.073 5.73803 13.073 5.26299 12.78 4.96999L9.53 1.71999C9.237 1.42699 8.762 1.42699 8.469 1.71999L5.219 4.96999C4.926 5.26299 4.926 5.73803 5.219 6.03103C5.512 6.32403 5.987 6.32305 6.28 6.03005Z"></path></g></svg>
                 </button>
@@ -258,13 +258,13 @@ function page() {
             <SelectedFiles selectedItems={selectedItems} />
           </div>
 
-          <div className='absolute bottom-0 left-0 right-0 flex items-start justify-between px-10 py-2 bg-[#1E1E1E]'>
+          <div className='absolute bottom-0 left-0 right-0 flex items-start justify-between px-10 py-2 bg-card'>
 
             <div className='flex gap-1'>
               <button
                 onClick={handlePreview}
                 disabled={!selectedItems.length}
-                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-l-4xl rounded-r-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
+                className={` text-foreground/60 disabled:opacity-60 bg-input rounded-l-4xl rounded-r-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
               >
                 <Eye className='h-4 w-4' />
                 Preview
@@ -272,7 +272,7 @@ function page() {
               <button
                 onClick={handleCopyContent}
                 disabled={!selectedItems.length}
-                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-r-4xl rounded-l-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
+                className={` text-foreground/60 disabled:opacity-60 bg-input rounded-r-4xl rounded-l-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
               >
                 {fetchingContent ? (
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -292,14 +292,14 @@ function page() {
               <div className='flex items-center gap-1'>
                 <button
                   onClick={handleUseToken}
-                  className={`${useAuthToken ? 'bg-[#31392f] text-[#A6EBA1]' : 'bg-[#2e2e2e] text-white/80'} rounded-l-full h-10 px-4 font-medium text-sm flex items-center gap-2 transition-all duration-300`}
+                  className={`${useAuthToken ? 'bg-brand text-brand-foreground' : 'bg-input text-foreground/80'} rounded-l-full h-10 px-4 font-medium text-sm flex items-center gap-2 transition-all duration-300`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>user-key</title><g fill="currentColor"><path d="M9 7.00049C10.6571 7.00049 12 5.65736 12 4.00049C12 2.34362 10.6571 1.00049 9 1.00049C7.34291 1.00049 6 2.34362 6 4.00049C6 5.65736 7.34291 7.00049 9 7.00049Z" fill-opacity="0.4"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M8.5 14.25C8.5 12.7312 9.73119 11.5 11.25 11.5C12.5088 11.5 13.57 12.3457 13.8965 13.5H17.25C17.6642 13.5 18 13.8358 18 14.25C18 14.6642 17.6642 15 17.25 15H16.5V15.75C16.5 16.1642 16.1642 16.5 15.75 16.5C15.3358 16.5 15 16.1642 15 15.75V15H13.8965C13.57 16.1543 12.5088 17 11.25 17C9.73119 17 8.5 15.7688 8.5 14.25ZM11.25 13C10.5596 13 10 13.5596 10 14.25C10 14.9404 10.5596 15.5 11.25 15.5C11.9404 15.5 12.5 14.9404 12.5 14.25C12.5 13.5596 11.9404 13 11.25 13Z"></path> <path d="M8.99999 8.50049C6.14167 8.50049 3.69058 10.2162 2.60517 12.6679C2.05162 13.9191 2.74425 15.3322 4.01259 15.7318C4.98685 16.0388 6.20082 16.323 7.60804 16.4418C7.22206 15.8019 7 15.0519 7 14.25C7 11.9028 8.90275 10 11.25 10C11.8742 10 12.4665 10.1344 13 10.3758V9.75882C11.8675 8.9661 10.489 8.50049 8.99999 8.50049Z" fill-opacity="0.4"></path></g></svg>
                   Use Token
                 </button>
                 <button
                   onClick={() => setIsDialogOpen(true)}
-                  className={`${useAuthToken ? 'bg-[#31392f] text-[#A6EBA1]' : 'bg-[#2e2e2e] text-white/80'} rounded-r-full h-10 px-4 font-semibold text-sm transition-all duration-300`}
+                  className={`${useAuthToken ? 'bg-brand text-brand-foreground' : 'bg-input text-foreground/80'} rounded-r-full h-10 px-4 font-semibold text-sm transition-all duration-300`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>dots</title><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="M9 9.5C9.27614 9.5 9.5 9.27614 9.5 9C9.5 8.72386 9.27614 8.5 9 8.5C8.72386 8.5 8.5 8.72386 8.5 9C8.5 9.27614 8.72386 9.5 9 9.5Z" fill="currentColor"></path> <path d="M3.25 9.5C3.52614 9.5 3.75 9.27614 3.75 9C3.75 8.72386 3.52614 8.5 3.25 8.5C2.97386 8.5 2.75 8.72386 2.75 9C2.75 9.27614 2.97386 9.5 3.25 9.5Z" fill="currentColor"></path> <path d="M14.75 9.5C15.0261 9.5 15.25 9.27614 15.25 9C15.25 8.72386 15.0261 8.5 14.75 8.5C14.4739 8.5 14.25 8.72386 14.25 9C14.25 9.27614 14.4739 9.5 14.75 9.5Z" fill="currentColor"></path></g></svg>
                 </button>
