@@ -1,134 +1,125 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { AlertCircle, Key, Eye, EyeOff } from "lucide-react"
-import { useStore } from "@/store/useStore"
+import React, { useState } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface GitHubTokenDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onSave: (token: string) => void
+    isOpen: boolean
+    onClose: () => void
+    onSave: (token: string) => void
 }
 
 export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialogProps) {
-  const [token, setToken] = useState("")
-  const [error, setError] = useState("")
-  const [showToken, setShowToken] = useState(false)
+    const [token, setToken] = useState('')
+    const [showToken, setShowToken] = useState(false)
 
-  const { setUseAuthToken, setGithubToken } = useStore()
-
-  useEffect(() => {
-    // Reset state when dialog opens
-    if (isOpen) {
-      const savedToken = localStorage.getItem("github-token") || ""
-      setToken(savedToken)
-      setError("")
-    }
-  }, [isOpen])
-
-  const handleSave = () => {
-    if (!token.trim()) {
-      setError("Please enter a GitHub token")
-      return
+    const handleSave = () => {
+        if (token.trim()) {
+            onSave(token.trim())
+            setToken('')
+        }
     }
 
-    // Save token to localStorage
-    localStorage.setItem("github-token", token)
-    onSave(token)
-    onClose()
-  }
+    const handleClose = () => {
+        setToken('')
+        onClose()
+    }
 
-  const handleClear = () => {
-    localStorage.removeItem("github-token")
-    setToken("")
-    setError("")
-    setUseAuthToken(false)
-    setGithubToken("")
-    onClose()
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md bg-[#262626] border-[#3e3e3e] text-neutral-300 rounded-3xl outline outline-offset-4 outline-white/10">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            GitHub Personal Access Token
-          </DialogTitle>
-          <DialogDescription className="text-neutral-400">
-            Add your GitHub token to access private repositories. Your token will only be stored in your browser's local
-            storage and never sent to our servers.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label htmlFor="github-token">Personal Access Token</Label>
-            <div className="relative">
-              <Input
-                id="github-token"
-                type={showToken ? "text" : "password"}
-                placeholder="github_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                value={token}
-                onChange={(e) => {
-                  setToken(e.target.value)
-                  setError("")
-                }}
-                className="bg-[#1e1e1e] border-[#3e3e3e] text-neutral-300 pb-2"
-              />
-              <button
-                type="button"
-                onClick={() => setShowToken(!showToken)}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors bg-neutral-600 h-6 w-6 rounded-[5px] flex items-center justify-center"
-              >
-                {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {error && (
-              <div className="flex items-center gap-2 text-red-400 text-sm mt-1">
-                <AlertCircle className="h-4 w-4" />
-                {error}
-              </div>
-            )}
-          </div>
-
-          <div className="bg- [#1e1e1e] p-3 rounded-md border-2 border-dashed border-[#3e3e3e] text-sm space-y-2">
-            <p className="font-medium">How to create a GitHub token:</p>
-            <ol className="list-decimal list-inside space-y-1 text-neutral-400">
-              <li>Go to <a href="https://github.com/settings/personal-access-tokens/new" className="underline text-blue-400">https://github.com/settings/personal-access-tokens/new</a></li>
-              <li>Click "Generate new token" (classic)</li>
-              <li>Select "All repositories" or "Only select repositories"</li>
-              <li>Repository permissions &gt; Contents</li>
-              <li>Select "Read only"</li>
-              <li>Click "Generate token" and add here</li>
-            </ol>
-          </div>
-        </div>
-
-        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClear}
-            className="w-full sm:w-auto border-[#3e3e3e] text-neutral-300 hover:bg-transparent hover:text-neutral-300"
-          >
-            Clear Token
-          </Button>
-          <Button onClick={handleSave} className="w-full sm:w-auto bg-[#3e3e3e] hover:bg-[#4e4e4e] text-neutral-300">
-            Save Token
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
+    return (
+        <Dialog open={isOpen} onOpenChange={handleClose}>
+            <DialogContent className="sm:max-w-[500px] bg-app-main border-app-border">
+                <DialogHeader>
+                    <DialogTitle className="text-app-text">GitHub Personal Access Token</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="token" className="text-app-text text-sm font-medium">
+                            Personal Access Token
+                        </Label>
+                        <div className="relative">
+                            <Input
+                                id="token"
+                                type={showToken ? "text" : "password"}
+                                value={token}
+                                onChange={(e) => setToken(e.target.value)}
+                                placeholder="ghp_xxxxxxxxxxxxxxxx"
+                                className="bg-app-input border-app-border text-app-text placeholder:text-app-text-muted pr-10"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && token.trim()) {
+                                        handleSave()
+                                    }
+                                }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowToken(!showToken)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text transition-colors"
+                            >
+                                {showToken ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                        <path d="m1 1 22 22"/>
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-3 text-sm text-app-text-muted">
+                        <p>
+                            To access private repositories or increase rate limits, you'll need a GitHub Personal Access Token.
+                        </p>
+                        
+                        <div className="space-y-2">
+                            <p className="font-medium text-app-text">How to create a token:</p>
+                            <ol className="list-decimal list-inside space-y-1 pl-4">
+                                <li>Go to GitHub Settings → Developer settings → Personal access tokens</li>
+                                <li>Click "Generate new token (classic)"</li>
+                                <li>Select scopes: <code className="bg-app-input px-1 py-0.5 rounded text-xs">repo</code> for private repos</li>
+                                <li>Copy the generated token</li>
+                            </ol>
+                        </div>
+                        
+                        <div className="flex items-start gap-2 p-3 bg-app-accent-bg border border-app-success/20 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-app-success flex-shrink-0 mt-0.5">
+                                <path d="m9 12 2 2 4-4"/>
+                                <path d="M21 12c.552 0 1-.448 1-1V8c0-.552-.448-1-1-1s-1 .448-1 1v3c0 .552.448 1 1 1z"/>
+                                <path d="M3 12c-.552 0-1-.448-1-1V8c0-.552.448-1 1-1s1 .448 1 1v3c0 .552-.448 1-1 1z"/>
+                                <path d="M12 21c.552 0 1-.448 1-1v-3c0-.552-.448-1-1-1s-1 .448-1 1v3c0 .552.448 1 1 1z"/>
+                                <path d="M12 3c-.552 0-1 .448-1 1v3c0 .552.448 1 1 1s1-.448 1-1V4c0-.552-.448-1-1-1z"/>
+                            </svg>
+                            <div>
+                                <p className="font-medium text-app-success">Secure Storage</p>
+                                <p className="text-xs">Your token is stored locally in your browser and never sent to our servers.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex gap-3 justify-end">
+                    <Button 
+                        variant="outline" 
+                        onClick={handleClose}
+                        className="border-app-border text-app-text hover:bg-app-hover"
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={handleSave}
+                        disabled={!token.trim()}
+                        className="bg-app-success text-primary-foreground hover:bg-app-success/90 disabled:opacity-50"
+                    >
+                        Save Token
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
 }

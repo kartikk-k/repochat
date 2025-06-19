@@ -1,4 +1,8 @@
-import { File, Folder } from 'lucide-react'
+"use client"
+
+import { motion, AnimatePresence } from "framer-motion"
+import { X } from "lucide-react"
+import { useStore } from "@/store/useStore"
 
 type FileItem = {
     name: string
@@ -12,69 +16,84 @@ interface SelectedFilesProps {
 }
 
 export function SelectedFiles({ selectedItems }: SelectedFilesProps) {
-    // Group files by directory
-    const groupedFiles = selectedItems.filter(item => item.type === 'file').reduce((acc: { [key: string]: FileItem[] }, item) => {
-        const parts = item.path.split('/')
-        const directory = parts.length > 1 ? parts.slice(0, -1).join('/') : ''
-        const fileName = parts[parts.length - 1]
+    const { removeSelectedItem } = useStore()
 
-        if (!acc[directory]) {
-            acc[directory] = []
-        }
-        acc[directory].push(item)
-        return acc
-    }, {})
+    const fileItems = selectedItems.filter(item => item.type === 'file')
 
-    if (selectedItems.length === 0) {
+    if (fileItems.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-white">
-                <svg className="opacity-30 size-8 mb-4" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>folder-5</title><g fill="#F7F7F7"><path d="M2.5,7.75H1V3.75c0-.965,.785-1.75,1.75-1.75h3.797c.505,0,.986,.218,1.318,.599l2.324,2.657-1.129,.987-2.325-2.658c-.048-.055-.116-.085-.188-.085H2.75c-.138,0-.25,.112-.25,.25V7.75Z"></path><path d="M14.25,16H3.75c-1.517,0-2.75-1.233-2.75-2.75V7.75c0-1.517,1.233-2.75,2.75-2.75H14.25c1.517,0,2.75,1.233,2.75,2.75v5.5c0,1.517-1.233,2.75-2.75,2.75Z"></path></g></svg>
-                <p className="text-sm opacity-70">No files selected</p>
-                <p className="text-xs mt-1 opacity-50">Select files from the explorer</p>
+            <div className="flex flex-col items-center justify-center h-full text-app-text-muted">
+                <div className="flex items-center justify-center w-16 h-16 bg-app-hover rounded-full mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" className="text-app-text-muted">
+                        <path fill="currentColor" d="M25.7 9.3l-7-7A.908.908 0 0 0 18 2H8a2.006 2.006 0 0 0-2 2v24a2.006 2.006 0 0 0 2 2h16a2.006 2.006 0 0 0 2-2V10a.908.908 0 0 0-.3-.7zM18 4.4l5.6 5.6H18zM24 28H8V4h8v6a2.006 2.006 0 0 0 2 2h6z"/>
+                    </svg>
+                </div>
+                <p className="text-lg font-medium mb-2">No files selected</p>
+                <p className="text-sm text-center max-w-md">
+                    Select files from the sidebar to see them here. You can then preview or copy the content.
+                </p>
             </div>
         )
     }
 
     return (
-        <div className="p-6 px-10 h-full overflow-y-auto">
-            <div className="space-y-6">
-                {/* Root files */}
-                {groupedFiles[''] && (
-                    <div>
-                        <div className="flex items-center gap-2 mb-2 bg-white/10 p-2 rounded-lg">
-                            <svg className='opacity-50' xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><title>folder</title><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="#F7F7F7"><path d="m.75,7.25V3.25c0-1.105.895-2,2-2h1.701c.607,0,1.18.275,1.56.748l.603.752h2.636c1.105,0,2,.895,2,2v2.5"></path><path d="m2.75,5.25h6.5c1.105,0,2,.895,2,2v1.5c0,1.105-.895,2-2,2H2.75c-1.105,0-2-.895-2-2v-1.5c0-1.105.895-2,2-2Z"></path></g></svg>
-                            <h3 className="text-sm font-medium text-white/80">/</h3>
-                        </div>
-                        <div className="space-y-1 pl-6 grid grid-cols-3 gap-2">
-                            {groupedFiles[''].map((item) => (
-                                <div key={item.path} className="flex items-center gap-2 text-sm text-white/60 hover:text-white/80 transition-colors border p-3 border-white/10 rounded-lg">
-                                    <svg className='opacity-50' xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><title>file</title><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="#F7F7F7"><path d="m6.75,4.25h3.5c0-.321-.127-.627-.353-.853l-2.295-2.295c-.226-.226-.532-.353-.851-.353v3.5Z" fill="#F7F7F7" stroke-width="0"></path><polyline points="6.75 .75 6.75 4.25 10.25 4.25"></polyline><path d="m7.603,1.103l2.294,2.294c.226.226.353.532.353.852v5.001c0,1.105-.895,2-2,2H3.75c-1.105,0-2-.895-2-2V2.75C1.75,1.645,2.645.75,3.75.75h3.001c.32,0,.626.127.852.353Z"></path></g></svg>
-                                    <span>{item.name}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+        <div className="px-10 py-6">
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-app-text">
+                    Selected Files ({fileItems.length})
+                </h2>
+                {fileItems.length > 0 && (
+                    <button
+                        onClick={() => {
+                            fileItems.forEach(item => {
+                                removeSelectedItem(item.path)
+                            })
+                        }}
+                        className="text-sm text-app-text-muted hover:text-destructive transition-colors"
+                    >
+                        Clear all
+                    </button>
                 )}
+            </div>
 
-                {/* Grouped files */}
-                {Object.entries(groupedFiles)
-                    .filter(([dir]) => dir !== '')
-                    .map(([directory, files]) => (
-                        <div key={directory}>
-                            <div className="flex items-center gap-2 mb-2 bg-white/10 p-2 rounded-lg">
-                                <svg className='opacity-50' xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><title>folder</title><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="#F7F7F7"><path d="m.75,7.25V3.25c0-1.105.895-2,2-2h1.701c.607,0,1.18.275,1.56.748l.603.752h2.636c1.105,0,2,.895,2,2v2.5"></path><path d="m2.75,5.25h6.5c1.105,0,2,.895,2,2v1.5c0,1.105-.895,2-2,2H2.75c-1.105,0-2-.895-2-2v-1.5c0-1.105.895-2,2-2Z"></path></g></svg>
-                                <h3 className="text-sm font-medium text-white/80">{directory}</h3>
+            <div className="grid gap-3">
+                <AnimatePresence>
+                    {fileItems.map((item) => (
+                        <motion.div
+                            key={item.path}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="flex items-center justify-between p-3 bg-app-input rounded-lg border border-app-border hover:border-app-border/60 transition-colors group"
+                        >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" className="text-app-text-muted">
+                                        <path fill="currentColor" d="M15.487 5.427L11.572 1.512C11.2442 1.1841 10.7996 1 10.336 1H4.75C3.2312 1 2 2.2312 2 3.75V14.25C2 15.7688 3.2312 17 4.75 17H13.25C14.7688 17 16 15.7688 16 14.25V6.6655C16 6.2009 15.8155 5.7553 15.487 5.427Z" fillOpacity="0.4"/>
+                                        <path fill="currentColor" d="M15.8691 6.00098H12C11.45 6.00098 11 5.55098 11 5.00098V1.13101C11.212 1.21806 11.4068 1.34677 11.572 1.512L15.487 5.427C15.6527 5.59266 15.7818 5.7882 15.8691 6.00098Z"/>
+                                    </svg>
+                                </div>
+                                
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-app-text truncate">
+                                        {item.name}
+                                    </p>
+                                    <p className="text-xs text-app-text-muted truncate">
+                                        {item.path}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="space-y-1 pl-6 grid grid-cols-3 gap-2">
-                                {files.map((item) => (
-                                    <div key={item.path} className="flex items-center gap-2 text-sm text-white/60 hover:text-white/80 transition-colors border p-3 border-white/10 rounded-lg">
-                                        <svg className='opacity-50' xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><title>file</title><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="#F7F7F7"><path d="m6.75,4.25h3.5c0-.321-.127-.627-.353-.853l-2.295-2.295c-.226-.226-.532-.353-.851-.353v3.5Z" fill="#F7F7F7" stroke-width="0"></path><polyline points="6.75 .75 6.75 4.25 10.25 4.25"></polyline><path d="m7.603,1.103l2.294,2.294c.226.226.353.532.353.852v5.001c0,1.105-.895,2-2,2H3.75c-1.105,0-2-.895-2-2V2.75C1.75,1.645,2.645.75,3.75.75h3.001c.32,0,.626.127.852.353Z"></path></g></svg>
-                                        <span>{item.name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+
+                            <button
+                                onClick={() => removeSelectedItem(item.path)}
+                                className="flex-shrink-0 p-1 rounded-md text-app-text-muted hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                                title="Remove file"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </motion.div>
                     ))}
+                </AnimatePresence>
             </div>
         </div>
     )

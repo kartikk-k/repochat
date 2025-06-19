@@ -41,6 +41,20 @@
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
+	
+	/* Custom App Colors */
+	--color-app-bg: var(--app-bg);
+	--color-app-sidebar: var(--app-sidebar);
+	--color-app-main: var(--app-main);
+	--color-app-input: var(--app-input);
+	--color-app-accent: var(--app-accent);
+	--color-app-accent-bg: var(--app-accent-bg);
+	--color-app-hover: var(--app-hover);
+	--color-app-text: var(--app-text);
+	--color-app-text-muted: var(--app-text-muted);
+	--color-app-border: var(--app-border);
+	--color-app-success: var(--app-success);
+	--color-app-success-bg: var(--app-success-bg);
 }
 
 /* width */
@@ -55,16 +69,18 @@
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-	@apply bg-white/20;
+	@apply bg-app-text/20;
 }
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-	@apply bg-white/30;
+	@apply bg-app-text/30;
 }
 
 :root {
 	--radius: 0.625rem;
+	
+	/* Base Colors */
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.145 0 0);
 	--card: oklch(1 0 0);
@@ -96,6 +112,20 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
+	
+	/* Light Theme App Colors */
+	--app-bg: oklch(0.98 0 0);
+	--app-sidebar: oklch(0.95 0 0);
+	--app-main: oklch(0.97 0 0);
+	--app-input: oklch(0.93 0 0);
+	--app-accent: oklch(0.4 0.15 142);
+	--app-accent-bg: oklch(0.95 0.05 142);
+	--app-hover: oklch(0.9 0 0);
+	--app-text: oklch(0.2 0 0);
+	--app-text-muted: oklch(0.5 0 0);
+	--app-border: oklch(0.85 0 0);
+	--app-success: oklch(0.6 0.15 142);
+	--app-success-bg: oklch(0.95 0.05 142);
 }
 
 .dark {
@@ -130,6 +160,20 @@
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
+	
+	/* Dark Theme App Colors */
+	--app-bg: oklch(0.08 0 0);
+	--app-sidebar: oklch(0.15 0 0);
+	--app-main: oklch(0.12 0 0);
+	--app-input: oklch(0.18 0 0);
+	--app-accent: oklch(0.7 0.15 142);
+	--app-accent-bg: oklch(0.2 0.05 142);
+	--app-hover: oklch(0.2 0 0);
+	--app-text: oklch(0.95 0 0);
+	--app-text-muted: oklch(0.6 0 0);
+	--app-border: oklch(0.25 0 0);
+	--app-success: oklch(0.7 0.15 142);
+	--app-success-bg: oklch(0.2 0.05 142);
 }
 
 @layer base {
@@ -137,7 +181,7 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-[#121212] text-foreground;
+		@apply bg-app-bg text-app-text;
 	}
 	button {
 		@apply cursor-pointer;
