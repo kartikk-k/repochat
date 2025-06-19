@@ -60,7 +60,7 @@ export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialog
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md bg-[#262626] border-[#3e3e3e] text-neutral-300 rounded-3xl outline outline-offset-4 outline-white/10">
+      <DialogContent className="sm:max-w-md bg-sidebar border-border text-foreground/80 rounded-3xl outline outline-offset-4 outline-white/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
@@ -85,7 +85,7 @@ export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialog
                   setToken(e.target.value)
                   setError("")
                 }}
-                className="bg-[#1e1e1e] border-[#3e3e3e] text-neutral-300 pb-2"
+                className="bg-card border-border text-foreground/80 pb-2"
               />
               <button
                 type="button"
@@ -103,7 +103,7 @@ export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialog
             )}
           </div>
 
-          <div className="bg- [#1e1e1e] p-3 rounded-md border-2 border-dashed border-[#3e3e3e] text-sm space-y-2">
+          <div className="bg-card p-3 rounded-md border-2 border-dashed border-border text-sm space-y-2">
             <p className="font-medium">How to create a GitHub token:</p>
             <ol className="list-decimal list-inside space-y-1 text-neutral-400">
               <li>Go to <a href="https://github.com/settings/personal-access-tokens/new" className="underline text-blue-400">https://github.com/settings/personal-access-tokens/new</a></li>
@@ -120,11 +120,11 @@ export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialog
           <Button
             variant="outline"
             onClick={handleClear}
-            className="w-full sm:w-auto border-[#3e3e3e] text-neutral-300 hover:bg-transparent hover:text-neutral-300"
+            className="w-full sm:w-auto border-border text-foreground/80 hover:bg-transparent hover:text-foreground/80"
           >
             Clear Token
           </Button>
-          <Button onClick={handleSave} className="w-full sm:w-auto bg-[#3e3e3e] hover:bg-[#4e4e4e] text-neutral-300">
+          <Button onClick={handleSave} className="w-full sm:w-auto bg-input hover:bg-input/70 text-foreground/80">
             Save Token
           </Button>
         </DialogFooter>
