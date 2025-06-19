@@ -1,6 +1,7 @@
 "use client"
 
 import { GitHubTokenDialog } from '@/components/APIKeyDialog'
+import { PromptPreviewDialog } from '@/components/PromptPreviewDialog'
 import { FileExplorer } from '@/components/FileExplorer'
 import { SelectedFiles } from '@/components/SelectedFiles'
 import getFolderStructure from '@/helpers/GetFolderStructure'
@@ -9,13 +10,14 @@ import { fetchRawContent } from '@/helpers/githubRaw'
 import { parseLocalFiles } from '@/helpers/parseLocalFiles'
 import { useStore } from '@/store/useStore'
 import React, { useEffect, useState } from 'react'
+import { Eye } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 
 
-const notAllowedExtentions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
+const notAllowedExtensions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
 
 function page() {
-  const { selectedItems, isDialogOpen, useAuthToken, repoContent, setRepoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, localFiles, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setLocalFiles, setGithubToken, handleSelect }
+  const { selectedItems, isDialogOpen, useAuthToken, repoContent, setRepoContent, addRepoContent, repoUrl, isLoading, error, fileData, githubToken, localFiles, prompt, isPromptDialogOpen, setPrompt, setIsPromptDialogOpen, setSelectedItems, setIsDialogOpen, setUseAuthToken, setRepoUrl, setIsLoading, setError, setFileData, setLocalFiles, setGithubToken, handleSelect }
     = useStore()
 
   const [fetchingContent, setFetchingContent] = useState(false)
@@ -81,7 +83,7 @@ function page() {
     const availableRawContent = repoContent.flatMap(item => item.path);
     const pathWithoutRawContent = selectedItems
       .filter(item => item.type === 'file')
-      .filter(item => !notAllowedExtentions.includes(item.path.split('.').pop() || ''))
+      .filter(item => !notAllowedExtensions.includes(item.path.split('.').pop() || ''))
       .filter(item => !availableRawContent.includes(item.path))
       .map(item => item.path);
 
@@ -125,40 +127,42 @@ function page() {
     }
   }
 
-  const handleCopyContent = () => {
-    if (!selectedItems.length) return
+  const generatePrompt = () => {
     const tree = getFolderStructure()
 
-    // all the selected files content
-    let filesContent = ''
+    const filesContent = selectedItems
+      .filter(item => !notAllowedExtensions.includes(item.path.split('.').pop() || ''))
+      .filter(item => item.type === 'file')
+      .map(item => {
+        const rawContent = repoContent.find(i => i.path === item.path)?.content
+        if (!rawContent) return ''
+        return `### FILE: ${item.path}\n\u0060\u0060\u0060\n${rawContent}\n\u0060\u0060\u0060\n`
+      })
+      .join('\n')
 
-    selectedItems.filter(item => !notAllowedExtentions.includes(item.path.split('.').pop() || '')).forEach(item => {
-      const rawContent = repoContent.find(i => i.path === item.path)?.content
-      if (!rawContent) return
-      if (item.type === 'file') {
-        filesContent += `
-        >>>> ${item.path} <<<<
-        ${rawContent}
-        -------------------------------------------
-        \n
-        `
-      }
-    })
+    return [
+      '## PROJECT TREE',
+      tree,
+      '## FILE CONTENTS',
+      filesContent,
+    ].join('\n')
+  }
 
-    const finalContent = `
-Project structure:
-${tree}
--------------------------------------------
--------------------------------------------
+  const handlePreview = () => {
+    if (!selectedItems.length) return
+    const content = generatePrompt()
+    setPrompt(content)
+    setIsPromptDialogOpen(true)
+  }
 
-Files content:
-${filesContent}
-`
-    // copy to clipboard
-    navigator.clipboard.writeText(finalContent)
+  const handleCopyContent = () => {
+    if (!selectedItems.length) return
+    const content = prompt || generatePrompt()
+    setPrompt(content)
+    navigator.clipboard.writeText(content)
     toast.custom((t) => (
       <div className={`${t} flex flex-col bg-[#31392f] text-[#A6EBA1] font-medium rounded-xl px-4 justify-center h-[64px] min-w-[250px] outline outline-[#A6EBA1]/20 outline-offset-4`}>
-        <p>Propmt copied</p>
+        <p>Prompt copied</p>
         <p className='text-sm opacity-70'>Copied to clipboard, paste it in your favorite app</p>
       </div>
     ), {
@@ -203,30 +207,36 @@ ${filesContent}
                 }}
                 className='bg-[#2e2e2e] text-white/80 text-sm font-medium w-full h-11 outline-none rounded-l-full px-5 rounded-rl-2xl'
               />
-              <button
-                onClick={handleFetch}
-                disabled={isLoading}
-                className={`text-[#A6EBA1] bg-[#31392f] font-semibold text-sm outline-none w-28 h-11 rounded-r-full flex items-center justify-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isLoading ? (
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>plug-2</title><g fill="currentColor"> <path fill-rule="evenodd" clip-rule="evenodd" d="M5.35528 8.46328C4.67183 7.77848 3.56372 7.77958 2.88033 8.46298C1.04246 10.3009 1.04178 13.2824 2.87967 15.1203C4.71756 16.9582 7.69841 16.9582 9.53631 15.1203C10.2211 14.4369 10.2204 13.3284 9.53699 12.645L5.35528 8.46328Z"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M16.7803 1.21967C17.0732 1.51256 17.0732 1.98744 16.7803 2.28033L15.6086 3.45203C16.9405 5.29199 16.7777 7.87891 15.1203 9.53631C14.4322 10.1368 13.3829 10.1082 12.7283 9.45365L8.54706 5.27232C7.89086 4.61741 7.86338 3.56763 8.4637 2.87964C10.1211 1.22223 12.708 1.05947 14.548 2.39136L15.7197 1.21967C16.0126 0.926777 16.4874 0.926777 16.7803 1.21967Z" fill-opacity="0.4"></path> <path d="M2.39136 14.548C2.53639 14.7483 2.69915 14.9398 2.87963 15.1203C3.06013 15.3008 3.25165 15.4636 3.45202 15.6086L2.28033 16.7803C1.98744 17.0732 1.51256 17.0732 1.21967 16.7803C0.926777 16.4874 0.926777 16.0126 1.21967 15.7197L2.39136 14.548Z"></path> <path d="M9.22631 12.3343L8.16565 11.2737L9.46962 9.96967C9.76251 9.67678 10.2374 9.67678 10.5303 9.96967C10.8232 10.2626 10.8232 10.7374 10.5303 11.0303L9.22631 12.3343Z"></path> <path d="M8.0303 7.46967C8.32319 7.76257 8.32319 8.23744 8.03029 8.53033L6.72631 9.83434L5.66565 8.77368L6.96964 7.46967C7.26253 7.17678 7.73741 7.17678 8.0303 7.46967Z"></path> </g></svg>
-                    Fetch
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => folderInputRef.current?.click()}
-                className='text-[#A6EBA1] bg-[#31392f] font-semibold text-sm outline-none h-11 px-4 rounded-full flex items-center ml-2'
-              >
-                Upload Folder
-              </button>
+
+              <div className='flex items-center gap-1'>
+                <button
+                  title='Fetch from Github'
+                  onClick={handleFetch}
+                  disabled={isLoading}
+                  className={`text-[#A6EBA1] bg-[#31392f] font-semibold text-sm outline-none w-28 h-11 flex items-center justify-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isLoading ? (
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>plug-2</title><g fill="currentColor"> <path fill-rule="evenodd" clip-rule="evenodd" d="M5.35528 8.46328C4.67183 7.77848 3.56372 7.77958 2.88033 8.46298C1.04246 10.3009 1.04178 13.2824 2.87967 15.1203C4.71756 16.9582 7.69841 16.9582 9.53631 15.1203C10.2211 14.4369 10.2204 13.3284 9.53699 12.645L5.35528 8.46328Z"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M16.7803 1.21967C17.0732 1.51256 17.0732 1.98744 16.7803 2.28033L15.6086 3.45203C16.9405 5.29199 16.7777 7.87891 15.1203 9.53631C14.4322 10.1368 13.3829 10.1082 12.7283 9.45365L8.54706 5.27232C7.89086 4.61741 7.86338 3.56763 8.4637 2.87964C10.1211 1.22223 12.708 1.05947 14.548 2.39136L15.7197 1.21967C16.0126 0.926777 16.4874 0.926777 16.7803 1.21967Z" fill-opacity="0.4"></path> <path d="M2.39136 14.548C2.53639 14.7483 2.69915 14.9398 2.87963 15.1203C3.06013 15.3008 3.25165 15.4636 3.45202 15.6086L2.28033 16.7803C1.98744 17.0732 1.51256 17.0732 1.21967 16.7803C0.926777 16.4874 0.926777 16.0126 1.21967 15.7197L2.39136 14.548Z"></path> <path d="M9.22631 12.3343L8.16565 11.2737L9.46962 9.96967C9.76251 9.67678 10.2374 9.67678 10.5303 9.96967C10.8232 10.2626 10.8232 10.7374 10.5303 11.0303L9.22631 12.3343Z"></path> <path d="M8.0303 7.46967C8.32319 7.76257 8.32319 8.23744 8.03029 8.53033L6.72631 9.83434L5.66565 8.77368L6.96964 7.46967C7.26253 7.17678 7.73741 7.17678 8.0303 7.46967Z"></path> </g></svg>
+                      Fetch
+                    </>
+                  )}
+                </button>
+                <button
+                  title='Upload Folder'
+                  type="button"
+                  onClick={() => folderInputRef.current?.click()}
+                  className='text-[#A6EBA1] bg-[#31392f] px-4 flex items-center justify-center font-semibold text-sm outline-none h-11 rounded-r-full gap-2'
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>move-obj-up</title><g fill="currentColor"><path opacity="0.4" d="M14.25 12H3.75C2.7835 12 2 12.7835 2 13.75V14.75C2 15.7165 2.7835 16.5 3.75 16.5H14.25C15.2165 16.5 16 15.7165 16 14.75V13.75C16 12.7835 15.2165 12 14.25 12Z"></path> <path d="M6.28 6.03005L8.25 4.06002V9.74905C8.25 10.163 8.586 10.499 9 10.499C9.414 10.499 9.75 10.163 9.75 9.74905V4.061L11.72 6.03103C11.866 6.17703 12.058 6.251 12.25 6.251C12.442 6.251 12.634 6.17803 12.78 6.03103C13.073 5.73803 13.073 5.26299 12.78 4.96999L9.53 1.71999C9.237 1.42699 8.762 1.42699 8.469 1.71999L5.219 4.96999C4.926 5.26299 4.926 5.73803 5.219 6.03103C5.512 6.32403 5.987 6.32305 6.28 6.03005Z"></path></g></svg>
+                </button>
+              </div>
+
               <input
                 ref={folderInputRef}
                 type="file"
@@ -250,11 +260,19 @@ ${filesContent}
 
           <div className='absolute bottom-0 left-0 right-0 flex items-start justify-between px-10 py-2 bg-[#1E1E1E]'>
 
-            <div>
+            <div className='flex gap-1'>
+              <button
+                onClick={handlePreview}
+                disabled={!selectedItems.length}
+                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-l-4xl rounded-r-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
+              >
+                <Eye className='h-4 w-4' />
+                Preview
+              </button>
               <button
                 onClick={handleCopyContent}
                 disabled={!selectedItems.length}
-                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-full h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
+                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-r-4xl rounded-l-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
               >
                 {fetchingContent ? (
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -297,6 +315,10 @@ ${filesContent}
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           onSave={handleTokenSave}
+        />
+        <PromptPreviewDialog
+          isOpen={isPromptDialogOpen}
+          onClose={() => setIsPromptDialogOpen(false)}
         />
 
         <Toaster />
