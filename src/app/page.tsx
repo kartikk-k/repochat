@@ -10,7 +10,8 @@ import { fetchRawContent } from '@/helpers/githubRaw'
 import { parseLocalFiles } from '@/helpers/parseLocalFiles'
 import { useStore } from '@/store/useStore'
 import React, { useEffect, useState } from 'react'
-import { Eye } from 'lucide-react'
+import { Eye, Menu } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Toaster, toast } from 'sonner'
 
 
@@ -21,6 +22,7 @@ function page() {
     = useStore()
 
   const [fetchingContent, setFetchingContent] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const folderInputRef = React.useRef<HTMLInputElement>(null)
 
   // Load token from localStorage on component mount
@@ -30,6 +32,19 @@ function page() {
       setGithubToken(savedToken)
     }
   }, [setGithubToken, setUseAuthToken])
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsSidebarOpen(false)
+      } else {
+        setIsSidebarOpen(true)
+      }
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -172,10 +187,15 @@ function page() {
   }
 
   return (
-    <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-10'>
-      <div className='flex items-center justify-center h-[650px] outline-2 outline-white/15 outline-offset-4 rounded-2xl w-full max-w-[1200px] overflow-hidden relative'>
+    <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-2 sm:px-10'>
+      <div className='flex items-center justify-center h-screen sm:h-[650px] outline-2 outline-white/15 outline-offset-4 rounded-none sm:rounded-2xl w-full max-w-[1200px] overflow-hidden relative'>
         {/* sidebar */}
-        <div className='w-[280px] bg-[#262626] h-full rounded-l-2xl relative'>
+        <div
+          className={cn(
+            'w-[280px] bg-[#262626] h-full rounded-l-2xl transition-transform duration-300 md:static md:translate-x-0 absolute inset-y-0 left-0 z-20',
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          )}
+        >
           <div className='py-10 h-full overflow-y-auto'>
             <FileExplorer
               data={fileData}
@@ -192,7 +212,13 @@ function page() {
         </div>
 
         {/* main */}
-        <div className='flex-1 bg-[#1E1E1E] h-full rounded-r-2xl relative'>
+        <div className='flex-1 bg-[#1E1E1E] h-full rounded-none md:rounded-r-2xl relative'>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className='absolute top-4 left-4 z-10 md:hidden bg-[#262626] p-2 rounded text-white'
+          >
+            <Menu className='h-5 w-5' />
+          </button>
           <div className='flex items-center justify-center w-full p-10'>
             <div className='flex items-center gap-1 w-full rounded-full outline outline-white/15 outline-offset-4 focus-within:outline-2 focus-within:outline-white/20 transition-all duration-300'>
               <input
