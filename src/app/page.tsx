@@ -184,7 +184,7 @@ function page() {
             />
           </div>
 
-          <div className='flex items-center gap-2 absolute top-4 left-4'>
+          <div className='flex items-center gap-2 absolute top-0 left-0 p-4 bg-[#262626]/20 backdrop-blur-md w-[calc(100%-8px)]'>
             <span className='h-3 w-3 rounded-full border border-white/15' />
             <span className='h-3 w-3 rounded-full border border-white/15' />
             <span className='h-3 w-3 rounded-full border border-white/15' />
