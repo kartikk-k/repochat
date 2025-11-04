@@ -4,12 +4,14 @@ import { GitHubTokenDialog } from '@/components/APIKeyDialog'
 import { PromptPreviewDialog } from '@/components/PromptPreviewDialog'
 import { FileExplorer } from '@/components/FileExplorer'
 import { SelectedFiles } from '@/components/SelectedFiles'
+import { FilterBar, FilterOptions } from '@/components/FilterBar'
 import getFolderStructure from '@/helpers/GetFolderStructure'
 import { fetchRepositoryContents } from '@/helpers/github'
 import { fetchRawContent } from '@/helpers/githubRaw'
 import { parseLocalFiles } from '@/helpers/parseLocalFiles'
+import { filterFileTree, findFilesMatchingPattern } from '@/helpers/FilterFiles'
 import { useStore } from '@/store/useStore'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Eye } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { safeLocalStorage } from '@/lib/localStorage'
@@ -23,6 +25,16 @@ function page() {
 
   const [fetchingContent, setFetchingContent] = useState(false)
   const folderInputRef = React.useRef<HTMLInputElement>(null)
+  const [filters, setFilters] = useState<FilterOptions>({
+    searchQuery: '',
+    fileTypes: [],
+    excludePatterns: ['node_modules', '.git'],
+  })
+
+  // Apply filters to file data
+  const filteredFileData = useMemo(() => {
+    return filterFileTree(fileData, filters)
+  }, [fileData, filters])
 
   // Load token from localStorage on component mount
   React.useEffect(() => {
@@ -172,23 +184,55 @@ function page() {
     })
   }
 
+  const handleFilterChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters)
+  }
+
+  const handleSmartSelect = (pattern: string) => {
+    const matchingFiles = findFilesMatchingPattern(fileData, pattern)
+    // Select all matching files
+    matchingFiles.forEach(file => {
+      const isAlreadySelected = selectedItems.some(item => item.path === file.path)
+      if (!isAlreadySelected) {
+        handleSelect(file, true)
+      }
+    })
+
+    if (matchingFiles.length > 0) {
+      toast.custom((t) => (
+        <div className={`${t} flex flex-col bg-[#31392f] text-[#A6EBA1] font-medium rounded-xl px-4 justify-center h-[64px] min-w-[250px] outline outline-[#A6EBA1]/20 outline-offset-4`}>
+          <p>Smart select applied</p>
+          <p className='text-sm opacity-70'>Selected {matchingFiles.length} file(s)</p>
+        </div>
+      ), {
+        duration: 2000,
+        position: 'top-right',
+      })
+    }
+  }
+
   return (
     <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-10'>
       <div className='flex items-center justify-center h-[650px] outline-2 outline-white/15 outline-offset-4 rounded-2xl w-full max-w-[1200px] overflow-hidden relative'>
         {/* sidebar */}
-        <div className='w-[280px] bg-[#262626] h-full rounded-l-2xl relative'>
-          <div className='py-10 h-full overflow-y-auto'>
+        <div className='w-[280px] bg-[#262626] h-full rounded-l-2xl relative flex flex-col'>
+          <div className='flex items-center gap-2 p-4 bg-[#262626]/20 backdrop-blur-md'>
+            <span className='h-3 w-3 rounded-full border border-white/15' />
+            <span className='h-3 w-3 rounded-full border border-white/15' />
+            <span className='h-3 w-3 rounded-full border border-white/15' />
+          </div>
+
+          <FilterBar
+            onFilterChange={handleFilterChange}
+            onSmartSelect={handleSmartSelect}
+          />
+
+          <div className='flex-1 overflow-y-auto'>
             <FileExplorer
-              data={fileData}
+              data={filteredFileData}
               onSelect={handleSelect}
               selectedItems={selectedItems}
             />
-          </div>
-
-          <div className='flex items-center gap-2 absolute top-0 left-0 p-4 bg-[#262626]/20 backdrop-blur-md w-[calc(100%-8px)]'>
-            <span className='h-3 w-3 rounded-full border border-white/15' />
-            <span className='h-3 w-3 rounded-full border border-white/15' />
-            <span className='h-3 w-3 rounded-full border border-white/15' />
           </div>
         </div>
 
