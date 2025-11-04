@@ -4,6 +4,7 @@ import { GitHubTokenDialog } from '@/components/APIKeyDialog'
 import { PromptPreviewDialog } from '@/components/PromptPreviewDialog'
 import { FileExplorer } from '@/components/FileExplorer'
 import { SelectedFiles } from '@/components/SelectedFiles'
+import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp'
 import getFolderStructure from '@/helpers/GetFolderStructure'
 import { fetchRepositoryContents } from '@/helpers/github'
 import { fetchRawContent } from '@/helpers/githubRaw'
@@ -13,6 +14,7 @@ import React, { useEffect, useState } from 'react'
 import { Eye } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { safeLocalStorage } from '@/lib/localStorage'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
 
 const notAllowedExtensions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
@@ -77,6 +79,60 @@ function page() {
     if (!selectedItems.length) return
     handleSelectedItemsChange()
   }, [selectedItems])
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'c',
+      ctrl: true,
+      callback: () => {
+        if (selectedItems.length > 0) {
+          handleCopyContent()
+        }
+      }
+    },
+    {
+      key: 'a',
+      ctrl: true,
+      callback: (e) => {
+        // Select all files in the current file tree
+        if (fileData.length > 0) {
+          const allFiles: FileItem[] = []
+          const collectFiles = (items: FileItem[]) => {
+            items.forEach(item => {
+              if (item.type === 'file') {
+                allFiles.push(item)
+              }
+              if (item.type === 'dir' && item.children) {
+                collectFiles(item.children)
+              }
+            })
+          }
+          collectFiles(fileData)
+          setSelectedItems(allFiles)
+        }
+      }
+    },
+    {
+      key: 'Escape',
+      callback: () => {
+        // Deselect all files
+        setSelectedItems([])
+      },
+      preventDefault: false
+    },
+    {
+      key: 'p',
+      ctrl: true,
+      shift: true,
+      callback: () => {
+        // Open preview dialog
+        if (selectedItems.length > 0) {
+          handlePreview()
+        }
+      }
+    }
+  ])
 
   const handleSelectedItemsChange = async () => {
     if (!selectedItems.length) return;
@@ -175,6 +231,11 @@ function page() {
   return (
     <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-10'>
       <div className='flex items-center justify-center h-[650px] outline-2 outline-white/15 outline-offset-4 rounded-2xl w-full max-w-[1200px] overflow-hidden relative'>
+
+        {/* Keyboard shortcuts help button */}
+        <div className='absolute bottom-[30px] right-0.5 z-10'>
+          <KeyboardShortcutsHelp />
+        </div>
         {/* sidebar */}
         <div className='w-[280px] bg-[#262626] h-full rounded-l-2xl relative'>
           <div className='py-10 h-full overflow-y-auto'>
@@ -265,6 +326,7 @@ function page() {
               <button
                 onClick={handlePreview}
                 disabled={!selectedItems.length}
+                title="Preview (Ctrl+Shift+P)"
                 className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-l-4xl rounded-r-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
               >
                 <Eye className='h-4 w-4' />
@@ -273,6 +335,7 @@ function page() {
               <button
                 onClick={handleCopyContent}
                 disabled={!selectedItems.length}
+                title="Copy content (Ctrl+C)"
                 className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-r-4xl rounded-l-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
               >
                 {fetchingContent ? (
