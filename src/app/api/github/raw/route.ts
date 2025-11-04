@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const repoUrl = searchParams.get('repoUrl')
 
     const path = searchParams.get('path')
-    const token = searchParams.get('token')
+    const token = searchParams.get('githubToken')
 
     if (!repoUrl || !path) {
         return NextResponse.json({ error: 'Repository URL and path are required' }, { status: 400 })
