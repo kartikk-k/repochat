@@ -48,7 +48,7 @@ export const useStore = create<StoreState>((set) => ({
     prompt: '',
     isPromptDialogOpen: false,
 
-    githubToken: typeof window !== 'undefined' ? localStorage.getItem('github-token') || '' : '',
+    githubToken: '',
     setSelectedItems: (items) => set({ selectedItems: items }),
     setIsDialogOpen: (isOpen) => set({ isDialogOpen: isOpen }),
     setUseAuthToken: (useToken) => set({ useAuthToken: useToken }),

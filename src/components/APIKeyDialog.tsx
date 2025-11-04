@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, Key, Eye, EyeOff } from "lucide-react"
 import { useStore } from "@/store/useStore"
+import { safeLocalStorage } from "@/lib/localStorage"
 
 interface GitHubTokenDialogProps {
   isOpen: boolean
@@ -31,7 +32,7 @@ export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialog
   useEffect(() => {
     // Reset state when dialog opens
     if (isOpen) {
-      const savedToken = localStorage.getItem("github-token") || ""
+      const savedToken = safeLocalStorage.getItem("github-token") || ""
       setToken(savedToken)
       setError("")
     }
@@ -44,13 +45,13 @@ export function GitHubTokenDialog({ isOpen, onClose, onSave }: GitHubTokenDialog
     }
 
     // Save token to localStorage
-    localStorage.setItem("github-token", token)
+    safeLocalStorage.setItem("github-token", token)
     onSave(token)
     onClose()
   }
 
   const handleClear = () => {
-    localStorage.removeItem("github-token")
+    safeLocalStorage.removeItem("github-token")
     setToken("")
     setError("")
     setUseAuthToken(false)
