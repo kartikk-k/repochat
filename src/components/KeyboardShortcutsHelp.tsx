@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Keyboard } from 'lucide-react'
 
 export function KeyboardShortcutsHelp() {
   const [isOpen, setIsOpen] = useState(false)
@@ -10,8 +9,14 @@ export function KeyboardShortcutsHelp() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.stopPropagation();
         e.preventDefault()
         setIsOpen(prev => !prev)
+      } else if (e.key === 'Escape') {
+        e.stopPropagation();
+        e.preventDefault()
+        setIsOpen(false)
+        document.getElementById('keyboard-shortcuts-help-button')?.blur();
       }
     }
 
@@ -27,11 +32,9 @@ export function KeyboardShortcutsHelp() {
   ]
 
   return (
-    <div
-      onKeyDown={e => { e.stopPropagation(); if (e.key === 'Escape') setIsOpen(false); }}
-      tabIndex={0}
-    >
+    <div>
       <button
+        id='keyboard-shortcuts-help-button'
         onClick={() => setIsOpen(!isOpen)}
         className="text-[#686868] hover:text-white/80 transition-colors p-2 rounded-md hover:bg-white/5"
         title="Keyboard shortcuts"
