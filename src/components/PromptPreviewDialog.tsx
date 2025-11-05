@@ -26,9 +26,10 @@ export function PromptPreviewDialog({ isOpen, onClose }: PromptPreviewDialogProp
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 font-mono">
           <textarea
-            className="bg-[#1e1e1e] border border-[#3e3e3e] text-neutral-300 rounded-md w-full h-80 resize-none p-2 text-sm"
+            className="bg-[#1e1e1e] border border-[#3e3e3e] text-neutral-300 rounded-md w-full h-96 p-2 text-sm focus:outline-2 focus:outline-white/20 resize-none"
+
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
           />
