@@ -15,7 +15,7 @@ export function PromptPreviewDialog({ isOpen, onClose }: PromptPreviewDialogProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-2xl bg-[#262626] border-[#3e3e3e] text-neutral-300 rounded-3xl outline outline-offset-4 outline-white/10">
+      <DialogContent className="sm:max-w-2xl bg-[#262626] border-[#3e3e3e] text-neutral-300 rounded-3xl outline outline-offset-4 outline-white/10" onKeyDown={e => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="size-[18px]" viewBox="0 0 12 12"><title>file</title><g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" stroke="currentColor"><path d="m6.75,4.25h3.5c0-.321-.127-.627-.353-.853l-2.295-2.295c-.226-.226-.532-.353-.851-.353v3.5Z" fill="currentColor" strokeWidth="0"></path><polyline points="6.75 .75 6.75 4.25 10.25 4.25"></polyline><path d="m7.603,1.103l2.294,2.294c.226.226.353.532.353.852v5.001c0,1.105-.895,2-2,2H3.75c-1.105,0-2-.895-2-2V2.75C1.75,1.645,2.645.75,3.75.75h3.001c.32,0,.626.127.852.353Z"></path></g></svg>
@@ -29,6 +29,7 @@ export function PromptPreviewDialog({ isOpen, onClose }: PromptPreviewDialogProp
         <div className="space-y-4 py-2 font-mono">
           <textarea
             className="bg-[#1e1e1e] border border-[#3e3e3e] text-neutral-300 rounded-md w-full h-96 p-2 text-sm focus:outline-2 focus:outline-white/20 resize-none"
+
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
           />

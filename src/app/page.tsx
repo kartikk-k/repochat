@@ -4,15 +4,17 @@ import { GitHubTokenDialog } from '@/components/APIKeyDialog'
 import { PromptPreviewDialog } from '@/components/PromptPreviewDialog'
 import { FileExplorer } from '@/components/FileExplorer'
 import { SelectedFiles } from '@/components/SelectedFiles'
+import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp'
 import getFolderStructure from '@/helpers/GetFolderStructure'
 import { fetchRepositoryContents } from '@/helpers/github'
 import { fetchRawContent } from '@/helpers/githubRaw'
 import { parseLocalFiles } from '@/helpers/parseLocalFiles'
 import { useStore } from '@/store/useStore'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Eye } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { safeLocalStorage } from '@/lib/localStorage'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
 
 const notAllowedExtensions = ['png', 'jpg', 'ico', 'jpeg', 'webp', 'mp3', 'mp4']
@@ -77,6 +79,60 @@ function page() {
     if (!selectedItems.length) return
     handleSelectedItemsChange()
   }, [selectedItems])
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'c',
+      ctrl: true,
+      callback: () => {
+        if (selectedItems.length > 0) {
+          handleCopyContent()
+        }
+      }
+    },
+    {
+      key: 'a',
+      ctrl: true,
+      callback: () => {
+        // Select all files in the current file tree
+        if (fileData.length > 0) {
+          const allFiles: FileItem[] = []
+          const collectFiles = (items: FileItem[]) => {
+            items.forEach(item => {
+              if (item.type === 'file') {
+                allFiles.push(item)
+              }
+              if (item.type === 'dir' && item.children) {
+                collectFiles(item.children)
+              }
+            })
+          }
+          collectFiles(fileData)
+          setSelectedItems(allFiles)
+        }
+      }
+    },
+    {
+      key: 'Escape',
+      callback: () => {
+        // Deselect all files
+        setSelectedItems([])
+      },
+      preventDefault: false
+    },
+    {
+      key: 'p',
+      ctrl: true,
+      shift: true,
+      callback: () => {
+        // Open preview dialog
+        if (selectedItems.length > 0) {
+          handlePreview()
+        }
+      }
+    }
+  ])
 
   const handleSelectedItemsChange = async () => {
     if (!selectedItems.length) return;
@@ -172,9 +228,20 @@ function page() {
     })
   }
 
+  // Calculate token count for selected content
+  const currentPromptContent = useMemo(() => {
+    if (!selectedItems.length) return ''
+    return generatePrompt()
+  }, [selectedItems, repoContent])
+
   return (
-    <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-10'>
-      <div className='flex items-center justify-center h-[650px] outline-2 outline-white/15 outline-offset-4 rounded-2xl w-full max-w-[1200px] overflow-hidden relative'>
+    <div className='min-h-screen bg-[#121212] flex flex-col items-center justify-center px-10' id='playground'>
+      <div className='flex items-center justify-center h-[650px] outline-2 outline-white/15 outline-offset-4 rounded-2xl w-full max-w-[1400px] overflow-hidden relative'>
+
+        {/* Keyboard shortcuts help button */}
+        <div className='absolute bottom-[30px] right-0.5 z-10'>
+          <KeyboardShortcutsHelp />
+        </div>
         {/* sidebar */}
         <div className='w-[280px] bg-[#262626] h-full rounded-l-2xl relative'>
           <div className='py-10 h-full overflow-y-auto'>
@@ -198,12 +265,18 @@ function page() {
             <div className='flex items-center gap-1 w-full rounded-full outline outline-white/15 outline-offset-4 focus-within:outline-2 focus-within:outline-white/20 transition-all duration-300'>
               <input
                 type="text"
+                autoFocus
                 placeholder='Enter github repo url here...'
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleFetch()
+                  } else if (e.key === 'Escape') {
+                    e.currentTarget.blur()
+                  }
+                  else {
+                    e.stopPropagation();
                   }
                 }}
                 className='bg-[#2e2e2e] text-white/80 text-sm font-medium w-full h-11 outline-none rounded-l-full px-5 rounded-rl-2xl'
@@ -259,55 +332,68 @@ function page() {
             <SelectedFiles selectedItems={selectedItems} />
           </div>
 
-          <div className='absolute bottom-0 left-0 right-0 flex items-start justify-between px-10 py-2 bg-[#1E1E1E]'>
+          <div className='absolute bottom-0 left-0 right-0 bg-[#1E1E1E]'>
+            <div className='relative'>
+              {/* Buttons Row */}
+              <div className='flex items-start justify-between px-10 py-2'>
+                <div className='flex gap-1'>
+                  <button
+                    onClick={handlePreview}
+                    disabled={!selectedItems.length}
+                    title="Preview (Ctrl+Shift+P)"
+                    className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-l-4xl rounded-r-sm h-10 w-[42px] lg:w-[148px] pl-1 lg:pl-0 font-medium text-sm flex items-center justify-center gap-2`}
+                  >
+                    <Eye className='h-4 w-4' />
+                    <span className='hidden lg:block'>
+                      Preview
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleCopyContent}
+                    disabled={!selectedItems.length}
+                    title="Copy content (Ctrl+C)"
+                    className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-r-4xl rounded-l-sm h-10 w-[42px] lg:w-[148px] pr-1 lg:pr-0 font-medium text-sm flex items-center justify-center gap-2`}
+                  >
+                    {fetchingContent ? (
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>clone</title><g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" stroke="currentColor"><path d="M10.75 1.75H3.75C2.64543 1.75 1.75 2.64543 1.75 3.75V10.75C1.75 11.8546 2.64543 12.75 3.75 12.75H10.75C11.8546 12.75 12.75 11.8546 12.75 10.75V3.75C12.75 2.64543 11.8546 1.75 10.75 1.75Z" fill="currentColor" fillOpacity="0.3" data-stroke="none" stroke="none"></path> <path d="M10.75 1.75H3.75C2.64543 1.75 1.75 2.64543 1.75 3.75V10.75C1.75 11.8546 2.64543 12.75 3.75 12.75H10.75C11.8546 12.75 12.75 11.8546 12.75 10.75V3.75C12.75 2.64543 11.8546 1.75 10.75 1.75Z"></path> <path d="M15 5.39499C15.733 5.69199 16.25 6.40999 16.25 7.24999V14.25C16.25 15.355 15.355 16.25 14.25 16.25H7.25002C6.41102 16.25 5.69202 15.733 5.39502 15"></path></g></svg>
+                        <span className='hidden lg:block'>
+                          Copy content
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
 
-            <div className='flex gap-1'>
-              <button
-                onClick={handlePreview}
-                disabled={!selectedItems.length}
-                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-l-4xl rounded-r-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
-              >
-                <Eye className='h-4 w-4' />
-                Preview
-              </button>
-              <button
-                onClick={handleCopyContent}
-                disabled={!selectedItems.length}
-                className={` text-white/60 disabled:opacity-60 bg-[#2e2e2e] rounded-r-4xl rounded-l-sm h-10 w-[148px] font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300`}
-              >
-                {fetchingContent ? (
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>clone</title><g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" stroke="currentColor"><path d="M10.75 1.75H3.75C2.64543 1.75 1.75 2.64543 1.75 3.75V10.75C1.75 11.8546 2.64543 12.75 3.75 12.75H10.75C11.8546 12.75 12.75 11.8546 12.75 10.75V3.75C12.75 2.64543 11.8546 1.75 10.75 1.75Z" fill="currentColor" fillOpacity="0.3" data-stroke="none" stroke="none"></path> <path d="M10.75 1.75H3.75C2.64543 1.75 1.75 2.64543 1.75 3.75V10.75C1.75 11.8546 2.64543 12.75 3.75 12.75H10.75C11.8546 12.75 12.75 11.8546 12.75 10.75V3.75C12.75 2.64543 11.8546 1.75 10.75 1.75Z"></path> <path d="M15 5.39499C15.733 5.69199 16.25 6.40999 16.25 7.24999V14.25C16.25 15.355 15.355 16.25 14.25 16.25H7.25002C6.41102 16.25 5.69202 15.733 5.39502 15"></path></g></svg>
-                    Copy content
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className='flex flex-col items-center'>
-              <div className='flex items-center gap-1'>
-                <button
-                  onClick={handleUseToken}
-                  className={`${useAuthToken ? 'bg-[#31392f] text-[#A6EBA1]' : 'bg-[#2e2e2e] text-white/80'} rounded-l-full h-10 px-4 font-medium text-sm flex items-center gap-2 transition-all duration-300`}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>user-key</title><g fill="currentColor"><path d="M9 7.00049C10.6571 7.00049 12 5.65736 12 4.00049C12 2.34362 10.6571 1.00049 9 1.00049C7.34291 1.00049 6 2.34362 6 4.00049C6 5.65736 7.34291 7.00049 9 7.00049Z" fillOpacity="0.4"></path> <path fillRule="evenodd" clipRule="evenodd" d="M8.5 14.25C8.5 12.7312 9.73119 11.5 11.25 11.5C12.5088 11.5 13.57 12.3457 13.8965 13.5H17.25C17.6642 13.5 18 13.8358 18 14.25C18 14.6642 17.6642 15 17.25 15H16.5V15.75C16.5 16.1642 16.1642 16.5 15.75 16.5C15.3358 16.5 15 16.1642 15 15.75V15H13.8965C13.57 16.1543 12.5088 17 11.25 17C9.73119 17 8.5 15.7688 8.5 14.25ZM11.25 13C10.5596 13 10 13.5596 10 14.25C10 14.9404 10.5596 15.5 11.25 15.5C11.9404 15.5 12.5 14.9404 12.5 14.25C12.5 13.5596 11.9404 13 11.25 13Z"></path> <path d="M8.99999 8.50049C6.14167 8.50049 3.69058 10.2162 2.60517 12.6679C2.05162 13.9191 2.74425 15.3322 4.01259 15.7318C4.98685 16.0388 6.20082 16.323 7.60804 16.4418C7.22206 15.8019 7 15.0519 7 14.25C7 11.9028 8.90275 10 11.25 10C11.8742 10 12.4665 10.1344 13 10.3758V9.75882C11.8675 8.9661 10.489 8.50049 8.99999 8.50049Z" fillOpacity="0.4"></path></g></svg>
-                  Use Token
-                </button>
-                <button
-                  onClick={() => setIsDialogOpen(true)}
-                  className={`${useAuthToken ? 'bg-[#31392f] text-[#A6EBA1]' : 'bg-[#2e2e2e] text-white/80'} rounded-r-full h-10 px-4 font-semibold text-sm transition-all duration-300`}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>dots</title><g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" stroke="currentColor"><path d="M9 9.5C9.27614 9.5 9.5 9.27614 9.5 9C9.5 8.72386 9.27614 8.5 9 8.5C8.72386 8.5 8.5 8.72386 8.5 9C8.5 9.27614 8.72386 9.5 9 9.5Z" fill="currentColor"></path> <path d="M3.25 9.5C3.52614 9.5 3.75 9.27614 3.75 9C3.75 8.72386 3.52614 8.5 3.25 8.5C2.97386 8.5 2.75 8.72386 2.75 9C2.75 9.27614 2.97386 9.5 3.25 9.5Z" fill="currentColor"></path> <path d="M14.75 9.5C15.0261 9.5 15.25 9.27614 15.25 9C15.25 8.72386 15.0261 8.5 14.75 8.5C14.4739 8.5 14.25 8.72386 14.25 9C14.25 9.27614 14.4739 9.5 14.75 9.5Z" fill="currentColor"></path></g></svg>
-                </button>
+                <div className='flex flex-col items-center'>
+                  <div className='flex items-center gap-1'>
+                    <button
+                      onClick={handleUseToken}
+                      className={`${useAuthToken ? 'bg-[#31392f] text-[#A6EBA1]' : 'bg-[#2e2e2e] text-white/80'} rounded-l-full h-10 px-4 font-medium text-sm flex items-center gap-2 transition-all duration-300`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>user-key</title><g fill="currentColor"><path d="M9 7.00049C10.6571 7.00049 12 5.65736 12 4.00049C12 2.34362 10.6571 1.00049 9 1.00049C7.34291 1.00049 6 2.34362 6 4.00049C6 5.65736 7.34291 7.00049 9 7.00049Z" fillOpacity="0.4"></path> <path fillRule="evenodd" clipRule="evenodd" d="M8.5 14.25C8.5 12.7312 9.73119 11.5 11.25 11.5C12.5088 11.5 13.57 12.3457 13.8965 13.5H17.25C17.6642 13.5 18 13.8358 18 14.25C18 14.6642 17.6642 15 17.25 15H16.5V15.75C16.5 16.1642 16.1642 16.5 15.75 16.5C15.3358 16.5 15 16.1642 15 15.75V15H13.8965C13.57 16.1543 12.5088 17 11.25 17C9.73119 17 8.5 15.7688 8.5 14.25ZM11.25 13C10.5596 13 10 13.5596 10 14.25C10 14.9404 10.5596 15.5 11.25 15.5C11.9404 15.5 12.5 14.9404 12.5 14.25C12.5 13.5596 11.9404 13 11.25 13Z"></path> <path d="M8.99999 8.50049C6.14167 8.50049 3.69058 10.2162 2.60517 12.6679C2.05162 13.9191 2.74425 15.3322 4.01259 15.7318C4.98685 16.0388 6.20082 16.323 7.60804 16.4418C7.22206 15.8019 7 15.0519 7 14.25C7 11.9028 8.90275 10 11.25 10C11.8742 10 12.4665 10.1344 13 10.3758V9.75882C11.8675 8.9661 10.489 8.50049 8.99999 8.50049Z" fillOpacity="0.4"></path></g></svg>
+                      <span className='hidden lg:block'>
+                        Use Token
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => setIsDialogOpen(true)}
+                      className={`${useAuthToken ? 'bg-[#31392f] text-[#A6EBA1]' : 'bg-[#2e2e2e] text-white/80'} rounded-r-full h-10 px-4 font-semibold text-sm transition-all duration-300`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><title>dots</title><g fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" stroke="currentColor"><path d="M9 9.5C9.27614 9.5 9.5 9.27614 9.5 9C9.5 8.72386 9.27614 8.5 9 8.5C8.72386 8.5 8.5 8.72386 8.5 9C8.5 9.27614 8.72386 9.5 9 9.5Z" fill="currentColor"></path> <path d="M3.25 9.5C3.52614 9.5 3.75 9.27614 3.75 9C3.75 8.72386 3.52614 8.5 3.25 8.5C2.97386 8.5 2.75 8.72386 2.75 9C2.75 9.27614 2.97386 9.5 3.25 9.5Z" fill="currentColor"></path> <path d="M14.75 9.5C15.0261 9.5 15.25 9.27614 15.25 9C15.25 8.72386 15.0261 8.5 14.75 8.5C14.4739 8.5 14.25 8.72386 14.25 9C14.25 9.27614 14.4739 9.5 14.75 9.5Z" fill="currentColor"></path></g></svg>
+                    </button>
+                  </div>
+                  <span className='text-white/50 text-xs mt-1'>Click to toggle</span>
+                </div>
               </div>
-              <span className='text-white/50 text-xs mt-1'>Click to toggle</span>
             </div>
           </div>
+
 
         </div>
 
@@ -324,6 +410,7 @@ function page() {
 
         <Toaster />
       </div>
+
     </div>
   )
 }
