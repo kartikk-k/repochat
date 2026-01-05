@@ -7,7 +7,7 @@ import { SelectedFiles } from '@/components/SelectedFiles'
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp'
 import getFolderStructure from '@/helpers/GetFolderStructure'
 import { fetchRepositoryContents } from '@/helpers/github'
-import { fetchRawContent } from '@/helpers/githubRaw'
+import { fetchFilesConcurrent } from '@/lib/concurrentFetch'
 import { parseLocalFiles } from '@/helpers/parseLocalFiles'
 import { useStore } from '@/store/useStore'
 import React, { useEffect, useState, useMemo } from 'react'
@@ -148,19 +148,9 @@ function page() {
 
     try {
       if (repoUrl) {
-        // Process files in batches of 5
-        for (let i = 0; i < pathWithoutRawContent.length; i += 5) {
-          const batch = pathWithoutRawContent.slice(i, i + 5);
-          const promises = batch.map(async (path) => {
-            try {
-              const { path: filePath, content } = await fetchRawContent(repoUrl, path, useAuthToken ? githubToken : undefined);
-              addRepoContent({ path: filePath, content });
-            } catch (error) {
-              console.error(`Error fetching raw content for path ${path}:`, error);
-            }
-          });
-          await Promise.all(promises);
-        }
+        // Full parallel fetch with rate limiting (20 concurrent requests)
+        const results = await fetchFilesConcurrent(pathWithoutRawContent, repoUrl, useAuthToken ? githubToken : undefined);
+        results.forEach(({ path: filePath, content }) => addRepoContent({ path: filePath, content }));
       } else {
         for (const path of pathWithoutRawContent) {
           const file = localFiles[path];
